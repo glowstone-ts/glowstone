@@ -1,15 +1,13 @@
-# glowstone-ts
+# glowstone
 
-To install dependencies:
+a heavily inspired from [azalea](https://github.com/azalea-rs/azalea) soon-to-be minecraft bot library in typescript.
 
-```bash
-bun install
-```
+currently work-in-progress in a very broken state.
 
-To run:
+## contributions
 
-```bash
-bun run index.ts
-```
+**large** external contributions aren't gonna be accepted. please understand.
 
-This project was created using `bun init` in bun v1.3.12. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+## license
+
+MIT
