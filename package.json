@@ -1,6 +1,5 @@
 {
   "name": "glowstone-ts",
-  "module": "index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
@@ -8,5 +7,8 @@
   },
   "peerDependencies": {
     "typescript": "^5"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }
