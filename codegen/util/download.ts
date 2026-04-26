@@ -70,6 +70,9 @@ export async function generateDataFromServerJar(jar: string) {
   if (!await Bun.file(jar).exists()) {
     throw new Error(`Server jar ${jar} does not exist`);
   }
+
+  if (existsSync("generated/data") && existsSync("generated/reports")) return;
+
   if (existsSync("tmp")) await rm("tmp", { recursive: true });
   await mkdir("tmp");
 
