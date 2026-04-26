@@ -3,7 +3,7 @@ import { getBurgerData } from "./util/burger";
 import { downloadClientJar } from "./util/download";
 import { getGeneratedHeader } from "./util/generated";
 
-const blocksFile = Bun.file("packages/registry/src/blocks.ts");
+const blocksFile = Bun.file("packages/registry/src/builtin/blocks.ts");
 const outputs = [getGeneratedHeader(path.relative(process.cwd(), import.meta.path))];
 
 const clientJar = await Bun.file("tmp/client-26.1.jar").exists() ? "tmp/client-26.1.jar" : await downloadClientJar("tmp", "26.1");

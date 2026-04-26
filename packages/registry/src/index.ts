@@ -1,2 +1,2 @@
 export { Identifier } from "./identifier";
-export { BlockKind } from "./blocks";
+export { BlockKind } from "./builtin/blocks";
