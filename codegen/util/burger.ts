@@ -1,12 +1,12 @@
 import { sleep } from "bun";
 
 export async function getBurgerData(jar: string) {
-  const outputFile = Bun.file("tmp/output.json");
+  const outputFile = Bun.file("generated/output.json");
 
   if (!await outputFile.exists()) {
     console.log(`Generating burger data for ${jar}...`);
     const proc = Bun.spawn({
-      cmd: ["uv", "run", "munch.py", "../../" + jar, "--output", "../../tmp/output.json"],
+      cmd: ["uv", "run", "munch.py", "../../" + jar, "--output", "../../generated/output.json"],
       cwd: "codegen/azalea-burger",
     });
 
