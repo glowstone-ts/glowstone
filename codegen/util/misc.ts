@@ -16,3 +16,33 @@ export function toCamelCase(str: string) {
   const pascalCase = toPascalCase(str);
   return pascalCase.charAt(0).toLowerCase() + pascalCase.slice(1);
 }
+
+export function identifierToNamespace(identifier: string) {
+  return identifier.split(":")[0];
+}
+
+export function identifierToPath(identifier: string) {
+  if (!identifier.includes(":")) {
+    return identifier;
+  }
+
+  const [_, path] = identifier.startsWith("#") ? identifier.slice(1).split(":") : identifier.split(":");
+  return path;
+}
+
+export function registryNameToEnumName(registryName: string) {
+  switch (registryName) {
+    case "block_type": 
+      registryName = "abstract_" + registryName;
+      break;
+    case "menu":
+    case "block":
+    case "item":
+      registryName += "_type";
+      break;
+    default:
+      break;
+  }
+
+  return toPascalCase(registryName);
+}

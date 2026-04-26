@@ -89,3 +89,9 @@ export async function generateDataFromServerJar(jar: string) {
   await cp("tmp/generated/reports", "generated/reports", { recursive: true, force: true });
   await rm("tmp", { recursive: true });
 }
+
+export async function getReport(jar: string, name: string) {
+  await generateDataFromServerJar(jar);
+  const reportFile = Bun.file(`generated/reports/${name}.json`);
+  return await reportFile.json();
+}
