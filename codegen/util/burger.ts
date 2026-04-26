@@ -1,7 +1,7 @@
 export async function getBurgerData(jar: string) {
   const outputFile = Bun.file("tmp/output.json");
 
-  if (!outputFile.exists()) {
+  if (!await outputFile.exists()) {
     console.log(`Generating burger data for ${jar}...`);
     const proc = Bun.spawn({
       cmd: ["uv", "run", "munch.py", "../../" + jar, "--output", "../../tmp/output.json"],
