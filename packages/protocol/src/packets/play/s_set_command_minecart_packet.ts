@@ -2,6 +2,7 @@
 
 import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
+import { PacketReader, PacketWriter } from '../../buffer';
 
 class ServerboundSetCommandMinecartPacket extends GlowstonePacket {
 	override id = 0x37;

@@ -51,6 +51,7 @@ for (const state in packetsReport) {
           getGeneratedHeader(path.relative(process.cwd(), import.meta.path)),
           "import { Direction, State } from '../../types';",
           "import { GlowstonePacket } from '../../packet';",
+          "import { PacketReader, PacketWriter } from '../../buffer';",
           "",
           `class ${packetClassName} extends GlowstonePacket {`,
           `\toverride id = 0x${protocolId.toString(16).padStart(2, "0")};`,

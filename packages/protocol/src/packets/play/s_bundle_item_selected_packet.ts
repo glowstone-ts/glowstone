@@ -2,6 +2,7 @@
 
 import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
+import { PacketReader, PacketWriter } from '../../buffer';
 
 class ServerboundBundleItemSelectedPacket extends GlowstonePacket {
 	override id = 0x03;

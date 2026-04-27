@@ -2,6 +2,7 @@
 
 import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
+import { PacketReader, PacketWriter } from '../../buffer';
 
 class ServerboundJigsawGeneratePacket extends GlowstonePacket {
 	override id = 0x1b;
