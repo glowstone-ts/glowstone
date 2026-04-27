@@ -165,7 +165,10 @@ export class PacketWriter {
     this.writeBytes(bits);
   }
 
-  writeByteArray(value: Uint8Array) {
+  writeByteArray(value: Uint8Array, maxLength = 1048576) {
+    if (value.length > maxLength)
+      throw new Error(`ByteArray exceeds ${maxLength} bytes`);
+
     this.writeVarInt(value.length);
     this.writeBytes(value);
   }
@@ -373,7 +376,7 @@ export class PacketReader {
     return this.readBytes(byteLength);
   }
 
-  readByteArray(): Uint8Array {
+  readByteArray(maxLength = 1048576): Uint8Array {
     return this.readBytes(this.readVarInt());
   }
 
