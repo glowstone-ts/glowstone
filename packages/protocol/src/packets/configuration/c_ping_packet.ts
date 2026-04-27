@@ -10,17 +10,21 @@ class ClientboundPingPacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public pingId: number,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeInt(this.pingId);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundPingPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const pingId = reader.readInt();
+		return new ClientboundPingPacket(pingId);
 	}
 }
 

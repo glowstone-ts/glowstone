@@ -4,23 +4,39 @@ import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
 import { PacketReader, PacketWriter } from '../../buffer';
 
+type DetailEntry = {
+	title: string;
+	description: string;
+}
+
 class ClientboundCustomReportDetailsPacket extends GlowstonePacket {
 	override id = 0x0f;
 	override state = State.Configuration;
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public details: DetailEntry[],
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeArray(this.details, (detail) => {
+			writer.writeString(detail.title, 128);
+			writer.writeString(detail.description, 4096);
+		});
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundCustomReportDetailsPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const details = reader.readArray(() => {
+			const title = reader.readString(128);
+			const description = reader.readString(4096);
+			return { title, description };
+		});
+		return new ClientboundCustomReportDetailsPacket(details);
 	}
 }
 

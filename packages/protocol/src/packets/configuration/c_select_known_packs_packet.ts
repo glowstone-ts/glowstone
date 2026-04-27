@@ -3,6 +3,7 @@
 import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
 import { PacketReader, PacketWriter } from '../../buffer';
+import type { PackEntry } from '../common';
 
 class ClientboundSelectKnownPacksPacket extends GlowstonePacket {
 	override id = 0x0e;
@@ -10,17 +11,30 @@ class ClientboundSelectKnownPacksPacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public knownPacks: PackEntry[],
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeArray(this.knownPacks, (pack) => {
+			writer.writeString(pack.namespace);
+			writer.writeString(pack.id);
+			writer.writeVarInt(pack.version);
+		});
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundSelectKnownPacksPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const knownPacks = reader.readArray(() => {
+			const namespace = reader.readString();
+			const id = reader.readString();
+			const version = reader.readVarInt();
+			return { namespace, id, version };
+		});
+		return new ClientboundSelectKnownPacksPacket(knownPacks);
 	}
 }
 

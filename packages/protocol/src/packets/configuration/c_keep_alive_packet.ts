@@ -10,17 +10,21 @@ class ClientboundKeepAlivePacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public keepAliveId: bigint,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeLong(this.keepAliveId);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundKeepAlivePacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const keepAliveId = reader.readLong();
+		return new ClientboundKeepAlivePacket(keepAliveId);
 	}
 }
 

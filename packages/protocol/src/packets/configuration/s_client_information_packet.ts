@@ -4,23 +4,68 @@ import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
 import { PacketReader, PacketWriter } from '../../buffer';
 
+enum ChatMode {
+	Enabled = 0,
+	CommandsOnly = 1,
+	Hidden = 2,
+}
+
+enum MainHand {
+	Left = 0,
+	Right = 1,
+}
+
+enum ParticleStatus {
+	All = 0,
+	Decreased = 1,
+	Minimal = 2,
+}
+
 class ServerboundClientInformationPacket extends GlowstonePacket {
 	override id = 0x00;
 	override state = State.Configuration;
 	override direction = Direction.Serverbound;
 
 	constructor(
-		// todo
+		public locale: string,
+		public viewDistance: number,
+		public chatMode: ChatMode,
+		public chatColors: boolean,
+		public displayedSkinParts: number,
+		public mainHand: MainHand,
+		public enableTextFiltering: boolean,
+		public allowServerListings: boolean,
+		public particleStatus: ParticleStatus,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeString(this.locale, 16);
+		writer.writeByte(this.viewDistance);
+		writer.writeVarInt(this.chatMode);
+		writer.writeBoolean(this.chatColors);
+		writer.writeByte(this.displayedSkinParts);
+		writer.writeVarInt(this.mainHand);
+		writer.writeBoolean(this.enableTextFiltering);
+		writer.writeBoolean(this.allowServerListings);
+		writer.writeVarInt(this.particleStatus);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ServerboundClientInformationPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const locale = reader.readString(16);
+		const viewDistance = reader.readByte();
+		const chatMode = reader.readVarInt();
+		const chatColors = reader.readBoolean();
+		const displayedSkinParts = reader.readByte();
+		const mainHand = reader.readVarInt();
+		const enableTextFiltering = reader.readBoolean();
+		const allowServerListings = reader.readBoolean();
+		const particleStatus = reader.readVarInt();
+		return new ServerboundClientInformationPacket(locale, viewDistance, chatMode, chatColors, displayedSkinParts, mainHand, enableTextFiltering, allowServerListings, particleStatus);
 	}
 }
 

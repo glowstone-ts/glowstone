@@ -10,17 +10,24 @@ class ClientboundStoreCookiePacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public key: string,
+		public payload: Uint8Array, 
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeString(this.key);
+		writer.writeByteArray(this.payload, 5120);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundStoreCookiePacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const key = reader.readString();
+		const payload = reader.readByteArray(5120);
+		return new ClientboundStoreCookiePacket(key, payload);
 	}
 }
 

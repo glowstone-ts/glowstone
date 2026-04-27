@@ -9,18 +9,16 @@ class ClientboundResetChatPacket extends GlowstonePacket {
 	override state = State.Configuration;
 	override direction = Direction.Clientbound;
 
-	constructor(
-		// todo
-	) {
+	constructor() {
 		super();
 	}
 
 	serialize() {
-		// todo
+		return new Uint8Array();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundResetChatPacket {
-		// todo
+		return new ClientboundResetChatPacket();
 	}
 }
 

@@ -3,6 +3,7 @@
 import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
 import { PacketReader, PacketWriter } from '../../buffer';
+import type { UUID } from 'node:crypto';
 
 class ClientboundResourcePackPopPacket extends GlowstonePacket {
 	override id = 0x08;
@@ -10,17 +11,21 @@ class ClientboundResourcePackPopPacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public uuid?: UUID | null,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writePrefixedOptional(this.uuid, (v) => writer.writeUUID(v));
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundResourcePackPopPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const uuid = reader.readPrefixedOptional(() => reader.readUUID());
+		return new ClientboundResourcePackPopPacket(uuid);
 	}
 }
 

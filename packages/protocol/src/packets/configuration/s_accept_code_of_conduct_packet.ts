@@ -9,18 +9,16 @@ class ServerboundAcceptCodeOfConductPacket extends GlowstonePacket {
 	override state = State.Configuration;
 	override direction = Direction.Serverbound;
 
-	constructor(
-		// todo
-	) {
+	constructor() {
 		super();
 	}
 
 	serialize() {
-		// todo
+		return new Uint8Array();
 	}
 
 	static override deserialize(bytes: Uint8Array): ServerboundAcceptCodeOfConductPacket {
-		// todo
+		return new ServerboundAcceptCodeOfConductPacket();
 	}
 }
 

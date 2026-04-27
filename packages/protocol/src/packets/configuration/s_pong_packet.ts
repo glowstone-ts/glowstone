@@ -10,17 +10,21 @@ class ServerboundPongPacket extends GlowstonePacket {
 	override direction = Direction.Serverbound;
 
 	constructor(
-		// todo
+		public pingId: bigint
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeLong(this.pingId);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ServerboundPongPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const pingId = reader.readLong();
+		return new ServerboundPongPacket(pingId);
 	}
 }
 

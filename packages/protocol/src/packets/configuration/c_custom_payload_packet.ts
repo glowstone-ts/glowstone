@@ -10,17 +10,24 @@ class ClientboundCustomPayloadPacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public channel: string,
+		public data: Uint8Array,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeString(this.channel);
+		writer.writeByteArray(this.data);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundCustomPayloadPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const channel = reader.readString();
+		const data = reader.readByteArray();
+		return new ClientboundCustomPayloadPacket(channel, data);
 	}
 }
 

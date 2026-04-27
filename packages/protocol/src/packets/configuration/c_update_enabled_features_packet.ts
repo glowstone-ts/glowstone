@@ -10,17 +10,21 @@ class ClientboundUpdateEnabledFeaturesPacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public featureFlags: string[]
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeArray(this.featureFlags, (v) => writer.writeString(v));
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundUpdateEnabledFeaturesPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const featureFlags = reader.readArray(() => reader.readString());
+		return new ClientboundUpdateEnabledFeaturesPacket(featureFlags);
 	}
 }
 

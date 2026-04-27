@@ -10,7 +10,7 @@ class ClientboundDisconnectPacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		// todo: waiting on nbt
 	) {
 		super();
 	}

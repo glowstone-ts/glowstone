@@ -10,7 +10,7 @@ class ServerboundCustomClickActionPacket extends GlowstonePacket {
 	override direction = Direction.Serverbound;
 
 	constructor(
-		// todo
+		// todo: waiting on nbt
 	) {
 		super();
 	}

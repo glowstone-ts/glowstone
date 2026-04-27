@@ -4,23 +4,51 @@ import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
 import { PacketReader, PacketWriter } from '../../buffer';
 
+type TaggedRegistryEntry = {
+	registry: string;
+	tags: TagEntry[];
+}
+
+type TagEntry = {
+	tagName: string;
+	values: number[];
+}
+
 class ClientboundUpdateTagsPacket extends GlowstonePacket {
 	override id = 0x0d;
 	override state = State.Configuration;
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public registries: TaggedRegistryEntry[],
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeArray(this.registries, (registry) => {
+			writer.writeString(registry.registry);
+			writer.writeArray(registry.tags, (tag) => {
+				writer.writeString(tag.tagName);
+				writer.writeArray(tag.values, (value) => writer.writeVarInt(value));
+			});
+		});
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundUpdateTagsPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const registries = reader.readArray(() => {
+			const registry = reader.readString();
+			const tags = reader.readArray(() => {
+				const tagName = reader.readString();
+				const values = reader.readArray(() => reader.readVarInt());
+				return { tagName, values };
+			});
+			return { registry, tags };
+		});
+		return new ClientboundUpdateTagsPacket(registries);
 	}
 }
 

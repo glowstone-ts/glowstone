@@ -3,6 +3,18 @@
 import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
 import { PacketReader, PacketWriter } from '../../buffer';
+import type { UUID } from 'node:crypto';
+
+enum ResourcePackResult {
+	SuccessfullyDownloaded = 0,
+	Declined = 1,
+	FailedToDownload = 2,
+	Accepted = 3,
+	Downloaded = 4,
+	InvalidURL = 5,
+	FailedToReload = 6,
+	Discarded = 7
+}
 
 class ServerboundResourcePackPacket extends GlowstonePacket {
 	override id = 0x06;
@@ -10,17 +22,24 @@ class ServerboundResourcePackPacket extends GlowstonePacket {
 	override direction = Direction.Serverbound;
 
 	constructor(
-		// todo
+		public uuid: UUID,
+		public result: ResourcePackResult
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeUUID(this.uuid);
+		writer.writeVarInt(this.result);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ServerboundResourcePackPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const uuid = reader.readUUID();
+		const result = reader.readVarInt();
+		return new ServerboundResourcePackPacket(uuid, result);
 	}
 }
 

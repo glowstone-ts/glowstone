@@ -10,17 +10,24 @@ class ClientboundTransferPacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public host: string,
+		public port: number,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeString(this.host);
+		writer.writeVarInt(this.port);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundTransferPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const host = reader.readString();
+		const port = reader.readVarInt();
+		return new ClientboundTransferPacket(host, port);
 	}
 }
 

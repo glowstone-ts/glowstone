@@ -10,17 +10,21 @@ class ClientboundCodeOfConductPacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public codeOfConduct: string,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeString(this.codeOfConduct);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundCodeOfConductPacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const codeOfConduct = reader.readString();
+		return new ClientboundCodeOfConductPacket(codeOfConduct);
 	}
 }
 

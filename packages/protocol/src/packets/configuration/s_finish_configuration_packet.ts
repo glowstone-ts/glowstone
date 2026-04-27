@@ -9,18 +9,16 @@ class ServerboundFinishConfigurationPacket extends GlowstonePacket {
 	override state = State.Configuration;
 	override direction = Direction.Serverbound;
 
-	constructor(
-		// todo
-	) {
+	constructor() {
 		super();
 	}
 
 	serialize() {
-		// todo
+		return new Uint8Array();
 	}
 
 	static override deserialize(bytes: Uint8Array): ServerboundFinishConfigurationPacket {
-		// todo
+		return new ServerboundFinishConfigurationPacket();
 	}
 }
 
