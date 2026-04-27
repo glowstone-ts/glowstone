@@ -9,18 +9,16 @@ class ServerboundStatusRequestPacket extends GlowstonePacket {
 	override state = State.Status;
 	override direction = Direction.Serverbound;
 
-	constructor(
-		// todo
-	) {
+	constructor() {
 		super();
 	}
 
 	serialize() {
-		// todo
+		return new Uint8Array();
 	}
 
 	static override deserialize(bytes: Uint8Array): ServerboundStatusRequestPacket {
-		// todo
+		return new ServerboundStatusRequestPacket();
 	}
 }
 

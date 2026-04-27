@@ -4,23 +4,60 @@ import { Direction, State } from '../../types';
 import { GlowstonePacket } from '../../packet';
 import { PacketReader, PacketWriter } from '../../buffer';
 
+type Version = {
+	name: string;
+	protocol: number;
+}
+
+type PlayerEntry = {
+	id: string;
+	name: string;
+}
+
+type Players = {
+	max: number;
+	online: number;
+	sample: PlayerEntry[];
+}
+
 class ClientboundStatusResponsePacket extends GlowstonePacket {
 	override id = 0x00;
 	override state = State.Status;
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public version: Version,
+		public enforcesSecureChat: boolean,
+		public players?: Players,
+		public description?: string,
+		public favicon?: string,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeString(JSON.stringify({
+			version: this.version,
+			players: this.players,
+			description: this.description,
+			favicon: this.favicon,
+			enforcesSecureChat: this.enforcesSecureChat,
+		}));
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundStatusResponsePacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const jsonString = reader.readString();
+		const data = JSON.parse(jsonString);
+		return new ClientboundStatusResponsePacket(
+			data.version,
+			data.enforcesSecureChat,
+			data.players,
+			data.description,
+			data.favicon,
+		);
 	}
 }
 

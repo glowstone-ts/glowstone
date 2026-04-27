@@ -10,17 +10,21 @@ class ClientboundPongResponsePacket extends GlowstonePacket {
 	override direction = Direction.Clientbound;
 
 	constructor(
-		// todo
+		public timestamp: bigint,
 	) {
 		super();
 	}
 
 	serialize() {
-		// todo
+		const writer = new PacketWriter();
+		writer.writeLong(this.timestamp);
+		return writer.finish();
 	}
 
 	static override deserialize(bytes: Uint8Array): ClientboundPongResponsePacket {
-		// todo
+		const reader = new PacketReader(bytes);
+		const timestamp = reader.readLong();
+		return new ClientboundPongResponsePacket(timestamp);
 	}
 }
 
