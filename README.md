@@ -8,6 +8,10 @@ currently work-in-progress in a very broken state.
 
 **large** external contributions aren't gonna be accepted. please understand.
 
+## discord
+
+join the discord server [**here!**](https://discord.gg/Gv8UNeHTVk)
+
 ## license
 
 MIT
