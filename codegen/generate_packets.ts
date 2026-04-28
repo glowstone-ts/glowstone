@@ -50,13 +50,17 @@ for (const state in packetsReport) {
         const output = [
           getGeneratedHeader(path.relative(process.cwd(), import.meta.path)),
           "import { Direction, State } from '../../types';",
-          "import { GlowstonePacket } from '../../packet';",
+          "import { DripleafPacket } from '../DripleafPacket';",
           "import { PacketReader, PacketWriter } from '../../buffer';",
           "",
-          `class ${packetClassName} extends GlowstonePacket {`,
-          `\toverride id = 0x${protocolId.toString(16).padStart(2, "0")};`,
-          `\toverride state = State.${upperCaseFirst(state)};`,
-          `\toverride direction = Direction.${upperCaseFirst(side)};`,
+          `export class ${packetClassName} extends DripleafPacket {`,
+          `\tstatic readonly id = 0x${protocolId.toString(16).padStart(2, "0")};`,
+          `\tstatic readonly state = State.${upperCaseFirst(state)};`,
+          `\tstatic readonly direction = Direction.${upperCaseFirst(side)};`,
+          "",
+          `\toverride readonly id = ${packetClassName}.id;`,
+          `\toverride readonly state = ${packetClassName}.state;`,
+          `\toverride readonly direction = ${packetClassName}.direction;`,
           "",
           "\tconstructor(",
           "\t\t// todo",
@@ -64,16 +68,14 @@ for (const state in packetsReport) {
           "\t\tsuper();",
           "\t}",
           "",
-          "\tserialize() {",
+          "\twrite(writer: PacketWriter) {",
           "\t\t// todo",
           "\t}",
           "",
-          `\tstatic override deserialize(bytes: Uint8Array): ${packetClassName} {`,
+          `\tstatic read(reader: PacketReader): ${packetClassName} {`,
           "\t\t// todo",
           "\t}",
           "}",
-          "",
-          `export { ${packetClassName} };`
         ];
 
         await Bun.write(packetFilePath, output.join("\n"));
@@ -98,17 +100,24 @@ for (const state in packetsReport) {
 
 const rootIndexOutput = [
   getGeneratedHeader(path.relative(process.cwd(), import.meta.path)),
+  "import { PacketRegistry, type PacketConstructor } from '../registry/PacketRegistry';",
+  "",
   ...stateImports,
   "",
-  "const serverboundPackets = [",
+  "const serverboundPackets: PacketConstructor[] = [",
   ...serverboundPackets,
   "];",
   "",
-  "const clientboundPackets = [",
+  "const clientboundPackets: PacketConstructor[] = [",
   ...clientboundPackets,
   "];",
   "",
-  `export { serverboundPackets, clientboundPackets, ${Object.keys(packetsReport).join(", ")} };`
+  "const packetRegistry = new PacketRegistry();",
+  "",
+  "for (const packet of [...serverboundPackets, ...clientboundPackets])",
+  "\tpacketRegistry.register(packet);",
+  "",
+  `export { packetRegistry, serverboundPackets, clientboundPackets, ${Object.keys(packetsReport).join(", ")} };`
 ];
 
 await Bun.write(path.join(PACKETS_DIR_PATH, "index.ts"), rootIndexOutput.join("\n"));

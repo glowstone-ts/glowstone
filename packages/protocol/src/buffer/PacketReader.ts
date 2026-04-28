@@ -1,0 +1,184 @@
+import type { UUID } from "node:crypto";
+import { decodeVarInt, decodeVarLong } from "./varint";
+
+const IDENTIFIER_PATTERN = /^[0-9a-z._-]+:[0-9a-z._\-\/]+$/;
+
+export class PacketReader {
+  offset = 0;
+
+  constructor(readonly bytes: Uint8Array) {}
+
+  clone(): PacketReader {
+    const clone = new PacketReader(this.bytes);
+    clone.offset = this.offset;
+    return clone;
+  }
+
+  get remaining(): number {
+    return this.bytes.length - this.offset;
+  }
+
+  readByte(): number {
+    const value = this.readUnsignedByte();
+    return value > 127 ? value - 256 : value;
+  }
+
+  readUnsignedByte(): number {
+    if (this.remaining < 1)
+      throw new Error("Unexpected end of packet");
+
+    return this.bytes[this.offset++]!;
+  }
+
+  readBoolean(): boolean {
+    const value = this.readUnsignedByte();
+    if (value !== 0 && value !== 1)
+      throw new Error(`Invalid boolean ${value}`);
+    return value === 1;
+  }
+
+  readShort(): number {
+    const value = (this.readUnsignedByte() << 8) | this.readUnsignedByte();
+    return value & 0x8000 ? value - 0x10000 : value;
+  }
+
+  readUnsignedShort(): number {
+    return (this.readUnsignedByte() << 8) | this.readUnsignedByte();
+  }
+
+  readInt(): number {
+    return (
+      (this.readUnsignedByte() << 24) |
+      (this.readUnsignedByte() << 16) |
+      (this.readUnsignedByte() << 8) |
+      this.readUnsignedByte()
+    );
+  }
+
+  readLong(): bigint {
+    let value = 0n;
+    for (let index = 0; index < 8; index++)
+      value = (value << 8n) | BigInt(this.readUnsignedByte());
+
+    return value & 0x8000000000000000n
+      ? value - 0x10000000000000000n
+      : value;
+  }
+
+  readFloat(): number {
+    const bytes = this.readBytes(4);
+    return new DataView(bytes.buffer, bytes.byteOffset, 4).getFloat32(0, false);
+  }
+
+  readDouble(): number {
+    const bytes = this.readBytes(8);
+    return new DataView(bytes.buffer, bytes.byteOffset, 8).getFloat64(0, false);
+  }
+
+  readVarInt(): number {
+    const [value, offset] = decodeVarInt(this.bytes, this.offset);
+    this.offset = offset;
+    return value;
+  }
+
+  readVarLong(): bigint {
+    const [value, offset] = decodeVarLong(this.bytes, this.offset);
+    this.offset = offset;
+    return value;
+  }
+
+  readString(maxLength = 32767): string {
+    const byteLength = this.readVarInt();
+    if (byteLength > maxLength * 3)
+      throw new Error("Encoded string exceeds protocol limit");
+
+    const value = new TextDecoder().decode(this.readBytes(byteLength));
+    if (value.length > maxLength)
+      throw new Error(`Decoded string exceeds ${maxLength}`);
+
+    return value;
+  }
+
+  readIdentifier(): string {
+    const value = this.readString(32767);
+    if (!IDENTIFIER_PATTERN.test(value))
+      throw new Error(`Invalid identifier: ${value}`);
+    return value;
+  }
+
+  readUUID(): UUID {
+    const bytes = this.readBytes(16);
+    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+    const value = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value))
+      throw new Error(`Invalid UUID: ${value}`);
+
+    return value as UUID;
+  }
+
+  readPosition() {
+    const value = this.readLong();
+
+    let x = Number(value >> 38n);
+    let y = Number(value & 0xfffn);
+    let z = Number((value >> 12n) & 0x3ffffffn);
+
+    if (x >= 1 << 25) x -= 1 << 26;
+    if (y >= 1 << 11) y -= 1 << 12;
+    if (z >= 1 << 25) z -= 1 << 26;
+
+    if (x < -33554432 || x > 33554431 || y < -2048 || y > 2047 || z < -33554432 || z > 33554431)
+      throw new Error(`Position out of range: ${x}, ${y}, ${z}`);
+
+    return { x, y, z };
+  }
+
+  readAngle(): number {
+    return this.readUnsignedByte() * 360 / 256;
+  }
+
+  readBitSet(): bigint[] {
+    const length = this.readVarInt();
+    return Array.from({ length }, () => this.readLong());
+  }
+
+  readFixedBitSet(byteLength: number): Uint8Array {
+    return this.readBytes(byteLength);
+  }
+
+  readByteArray(maxLength = 1048576): Uint8Array {
+    const length = this.readVarInt();
+    if (length > maxLength)
+      throw new Error(`ByteArray length ${length} exceeds maximum ${maxLength}`);
+    return this.readBytes(length);
+  }
+
+  readPrefixedOptional<T>(read: () => T): T | null {
+    return this.readBoolean() ? read() : null;
+  }
+
+  readArray<T>(read: () => T): T[] {
+    const length = this.readVarInt();
+    return Array.from({ length }, () => read());
+  }
+
+  readBytes(length: number): Uint8Array {
+    if (length < 0)
+      throw new Error(`Invalid byte length ${length}`);
+    if (this.remaining < length)
+      throw new Error("Unexpected end of packet");
+
+    const value = this.bytes.slice(this.offset, this.offset + length);
+    this.offset += length;
+    return value;
+  }
+
+  readRemaining(): Uint8Array {
+    return this.readBytes(this.remaining);
+  }
+
+  readUnknown(fieldName: string): never {
+    throw new Error(`Cannot read unknown packet field: ${fieldName}`);
+  }
+}
