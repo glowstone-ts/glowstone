@@ -18,9 +18,12 @@ export class PacketReader {
     return this.bytes.length - this.offset;
   }
 
-  readByte(): number {
-    const value = this.readUnsignedByte();
-    return value > 127 ? value - 256 : value;
+  readByte(min = -128, max = 127): number {
+    let value = this.readUnsignedByte();
+    if (value > 127) value -= 256;
+    if (value < min || value > max)
+      throw new Error(`Byte out of range (${min}..${max}): ${value}`);
+    return value;
   }
 
   readUnsignedByte(): number {

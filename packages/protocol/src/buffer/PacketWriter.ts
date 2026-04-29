@@ -16,8 +16,8 @@ export class PacketWriter {
       throw new Error(`${name} out of range (${min}..${max}): ${value}`);
   }
 
-  writeByte(value: number) {
-    this.range("Byte", value, -128, 127);
+  writeByte(value: number, min = -128, max = 127) {
+    this.range("Byte", value, min, max);
     this.chunks.push(value & 0xff);
   }
 
