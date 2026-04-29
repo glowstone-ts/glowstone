@@ -30,3 +30,5 @@ export interface NbtTag {
   name: string;
   value: NbtValue;
 }
+
+export type UnnamedNbtTag = Omit<NbtTag, "name">;
