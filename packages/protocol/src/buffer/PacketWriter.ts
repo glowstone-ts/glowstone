@@ -1,4 +1,3 @@
-import type { UUID } from "node:crypto";
 import { writeVarInt, writeVarLong } from "./varint";
 
 const INT_MIN = -2147483648;
@@ -101,12 +100,13 @@ export class PacketWriter {
     this.writeString(value, 32767);
   }
 
-  writeUUID(value: UUID) {
+  writeUUID(value: string) {
     const normalized = value.toLowerCase();
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(normalized))
+
+    if (!/^[0-9a-f]{32}$/.test(normalized))
       throw new Error(`Invalid UUID: ${value}`);
 
-    const number = BigInt(`0x${normalized.replaceAll("-", "")}`);
+    const number = BigInt(`0x${normalized}`);
     this.range("UUID", number, 0n, UUID_MAX);
 
     for (let shift = 120n; shift >= 0n; shift -= 8n)

@@ -1,4 +1,3 @@
-import type { UUID } from "node:crypto";
 import { decodeVarInt, decodeVarLong } from "./varint";
 
 const IDENTIFIER_PATTERN = /^[0-9a-z._-]+:[0-9a-z._\-\/]+$/;
@@ -106,15 +105,14 @@ export class PacketReader {
     return value;
   }
 
-  readUUID(): UUID {
+  readUUID(): string {
     const bytes = this.readBytes(16);
-    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
-    const value = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    const value = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
 
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value))
+    if (!/^[0-9a-f]{32}$/.test(value))
       throw new Error(`Invalid UUID: ${value}`);
 
-    return value as UUID;
+    return value;
   }
 
   readPosition() {
