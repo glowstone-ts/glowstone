@@ -56,11 +56,11 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     listeners.add(listener as PacketListener<DripleafPacket>);
     this.packetListeners.set(packetType, listeners);
 
-    listeners.delete(listener as PacketListener<DripleafPacket>);
-    if (listeners.size === 0)
-      this.packetListeners.delete(packetType);
-    
-    return;
+    return () => { 
+      listeners.delete(listener as PacketListener<DripleafPacket>);
+      if (listeners.size === 0)
+        this.packetListeners.delete(packetType);
+    }
   }
 
   setState(state: State) {
