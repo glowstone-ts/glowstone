@@ -4,6 +4,10 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+enum DebugSampleType {
+	TickTime = 0,
+}
+
 export class ClientboundDebugSamplePacket extends DripleafPacket {
 	static readonly id = 0x1e;
 	static readonly state = State.Play;
@@ -14,16 +18,24 @@ export class ClientboundDebugSamplePacket extends DripleafPacket {
 	override readonly direction = ClientboundDebugSamplePacket.direction;
 
 	constructor(
-		// todo
+		public sample: bigint[],
+		public sampleType: DebugSampleType
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeArray(this.sample, (value) => {
+			writer.writeLong(value);
+		});
+		writer.writeVarInt(this.sampleType);
 	}
 
 	static read(reader: PacketReader): ClientboundDebugSamplePacket {
-		// todo
+		const sample = reader.readArray(() => {
+			return reader.readLong();
+		});
+		const sampleType = reader.readVarInt() as DebugSampleType;
+		return new ClientboundDebugSamplePacket(sample, sampleType);
 	}
 }

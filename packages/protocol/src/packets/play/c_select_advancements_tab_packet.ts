@@ -14,16 +14,17 @@ export class ClientboundSelectAdvancementsTabPacket extends DripleafPacket {
 	override readonly direction = ClientboundSelectAdvancementsTabPacket.direction;
 
 	constructor(
-		// todo
+		public tab: string | null
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writePrefixedOptional(this.tab, writer.writeString);
 	}
 
 	static read(reader: PacketReader): ClientboundSelectAdvancementsTabPacket {
-		// todo
+		const tab = reader.readPrefixedOptional(reader.readString);
+		return new ClientboundSelectAdvancementsTabPacket(tab);
 	}
 }

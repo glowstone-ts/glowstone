@@ -14,16 +14,21 @@ export class ClientboundDeleteChatPacket extends DripleafPacket {
 	override readonly direction = ClientboundDeleteChatPacket.direction;
 
 	constructor(
-		// todo
+		public messageId: number,
+		public signature: Uint8Array | null
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.messageId);
+		if (this.signature) writer.writeByteArray(this.signature, 256);
 	}
 
 	static read(reader: PacketReader): ClientboundDeleteChatPacket {
-		// todo
+		const messageId = reader.readVarInt();
+		let signature: Uint8Array | null = null;
+		if (reader.remaining == 256) signature = reader.readByteArray();
+		return new ClientboundDeleteChatPacket(messageId, signature);
 	}
 }

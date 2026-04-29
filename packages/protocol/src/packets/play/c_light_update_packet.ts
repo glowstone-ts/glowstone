@@ -14,16 +14,21 @@ export class ClientboundLightUpdatePacket extends DripleafPacket {
 	override readonly direction = ClientboundLightUpdatePacket.direction;
 
 	constructor(
-		// todo
+		public x: number,
+		public z: number,
+		public lightData: any // todo
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.x);
+		writer.writeVarInt(this.z);
 	}
 
 	static read(reader: PacketReader): ClientboundLightUpdatePacket {
-		// todo
+		const x = reader.readVarInt();
+		const z = reader.readVarInt();
+		return new ClientboundLightUpdatePacket(x, z, null);
 	}
 }

@@ -14,16 +14,23 @@ export class ClientboundSetHealthPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetHealthPacket.direction;
 
 	constructor(
-		// todo
+		public health: number,
+		public food: number,
+		public saturation: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeFloat(this.health);
+		writer.writeVarInt(this.food);
+		writer.writeFloat(this.saturation);
 	}
 
 	static read(reader: PacketReader): ClientboundSetHealthPacket {
-		// todo
+		const health = reader.readFloat();
+		const food = reader.readVarInt();
+		const saturation = reader.readFloat();
+		return new ClientboundSetHealthPacket(health, food, saturation);
 	}
 }

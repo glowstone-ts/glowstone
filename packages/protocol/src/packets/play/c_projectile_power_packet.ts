@@ -14,16 +14,20 @@ export class ClientboundProjectilePowerPacket extends DripleafPacket {
 	override readonly direction = ClientboundProjectilePowerPacket.direction;
 
 	constructor(
-		// todo
+		public unknownId: number, // todo: figure out what this is (src says "id")
+		public accelerationPower: number,
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.unknownId);
+		writer.writeDouble(this.accelerationPower);
 	}
 
 	static read(reader: PacketReader): ClientboundProjectilePowerPacket {
-		// todo
+		const unknownId = reader.readVarInt();
+		const accelerationPower = reader.readDouble();
+		return new ClientboundProjectilePowerPacket(unknownId, accelerationPower);
 	}
 }

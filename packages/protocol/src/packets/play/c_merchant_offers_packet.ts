@@ -4,6 +4,10 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+type MerchantOffer = {
+	// todo
+}
+
 export class ClientboundMerchantOffersPacket extends DripleafPacket {
 	static readonly id = 0x34;
 	static readonly state = State.Play;
@@ -14,13 +18,19 @@ export class ClientboundMerchantOffersPacket extends DripleafPacket {
 	override readonly direction = ClientboundMerchantOffersPacket.direction;
 
 	constructor(
-		// todo
+		public windowId: number,
+		public offers: unknown, // todo
+		public villagerLevel: number,
+		public villagerXp: number,
+		public showProgress: boolean,
+		public canRestock: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.windowId);
+
 	}
 
 	static read(reader: PacketReader): ClientboundMerchantOffersPacket {

@@ -14,7 +14,7 @@ export class ClientboundSetCursorItemPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetCursorItemPacket.direction;
 
 	constructor(
-		// todo
+		// todo: waiting on item stacks
 	) {
 		super();
 	}

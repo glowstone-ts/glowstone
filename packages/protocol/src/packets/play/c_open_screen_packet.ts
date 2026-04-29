@@ -3,6 +3,7 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
 
 export class ClientboundOpenScreenPacket extends DripleafPacket {
 	static readonly id = 0x3b;
@@ -14,16 +15,23 @@ export class ClientboundOpenScreenPacket extends DripleafPacket {
 	override readonly direction = ClientboundOpenScreenPacket.direction;
 
 	constructor(
-		// todo
+		public containerId: number,
+		public type: number,
+		public title: UnnamedNbtTag
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.containerId);
+		writer.writeVarInt(this.type);
+		writer.writeNbt(this.title);
 	}
 
 	static read(reader: PacketReader): ClientboundOpenScreenPacket {
-		// todo
+		const containerId = reader.readVarInt();
+		const type = reader.readVarInt();
+		const title = reader.readNbt();
+		return new ClientboundOpenScreenPacket(containerId, type, title);
 	}
 }

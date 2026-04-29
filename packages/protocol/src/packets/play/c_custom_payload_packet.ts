@@ -14,16 +14,20 @@ export class ClientboundCustomPayloadPacket extends DripleafPacket {
 	override readonly direction = ClientboundCustomPayloadPacket.direction;
 
 	constructor(
-		// todo
+		public channel: string,
+		public data: Uint8Array
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeString(this.channel);
+		writer.writeByteArray(this.data);
 	}
 
 	static read(reader: PacketReader): ClientboundCustomPayloadPacket {
-		// todo
+		const channel = reader.readString();
+		const data = reader.readByteArray();
+		return new ClientboundCustomPayloadPacket(channel, data);
 	}
 }

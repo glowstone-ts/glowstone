@@ -14,16 +14,17 @@ export class ClientboundSetBorderWarningDistancePacket extends DripleafPacket {
 	override readonly direction = ClientboundSetBorderWarningDistancePacket.direction;
 
 	constructor(
-		// todo
+		public warningBlocks: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.warningBlocks);
 	}
 
 	static read(reader: PacketReader): ClientboundSetBorderWarningDistancePacket {
-		// todo
+		const warningBlocks = reader.readVarInt();
+		return new ClientboundSetBorderWarningDistancePacket(warningBlocks);
 	}
 }

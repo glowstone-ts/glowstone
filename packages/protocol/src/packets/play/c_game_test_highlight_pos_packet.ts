@@ -2,7 +2,7 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
 
 export class ClientboundGameTestHighlightPosPacket extends DripleafPacket {
 	static readonly id = 0x28;
@@ -14,16 +14,20 @@ export class ClientboundGameTestHighlightPosPacket extends DripleafPacket {
 	override readonly direction = ClientboundGameTestHighlightPosPacket.direction;
 
 	constructor(
-		// todo
+		public absolutePosition: Position,
+		public relativePosition: Position
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writePosition(this.absolutePosition);
+		writer.writePosition(this.relativePosition);
 	}
 
 	static read(reader: PacketReader): ClientboundGameTestHighlightPosPacket {
-		// todo
+		const absolutePosition = reader.readPosition();
+		const relativePosition = reader.readPosition();
+		return new ClientboundGameTestHighlightPosPacket(absolutePosition, relativePosition);
 	}
 }

@@ -14,16 +14,20 @@ export class ClientboundForgetLevelChunkPacket extends DripleafPacket {
 	override readonly direction = ClientboundForgetLevelChunkPacket.direction;
 
 	constructor(
-		// todo
+		public chunkZ: number,
+		public chunkX: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeInt(this.chunkZ);
+		writer.writeInt(this.chunkX);
 	}
 
 	static read(reader: PacketReader): ClientboundForgetLevelChunkPacket {
-		// todo
+		const chunkZ = reader.readInt();
+		const chunkX = reader.readInt();
+		return new ClientboundForgetLevelChunkPacket(chunkZ, chunkX);
 	}
 }

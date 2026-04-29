@@ -14,16 +14,38 @@ export class ClientboundInitializeBorderPacket extends DripleafPacket {
 	override readonly direction = ClientboundInitializeBorderPacket.direction;
 
 	constructor(
-		// todo
+		public x: number,
+		public z: number,
+		public oldDiameter: number,
+		public newDiameter: number,
+		public speed: bigint,
+		public portalTeleportBoundary: number,
+		public warningBlocks: number,
+		public warningTime: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeDouble(this.x);
+		writer.writeDouble(this.z);
+		writer.writeDouble(this.oldDiameter);
+		writer.writeDouble(this.newDiameter);
+		writer.writeVarLong(this.speed);
+		writer.writeVarInt(this.portalTeleportBoundary);
+		writer.writeVarInt(this.warningBlocks);
+		writer.writeVarInt(this.warningTime);
 	}
 
 	static read(reader: PacketReader): ClientboundInitializeBorderPacket {
-		// todo
+		const x = reader.readDouble();
+		const z = reader.readDouble();
+		const oldDiameter = reader.readDouble();
+		const newDiameter = reader.readDouble();
+		const speed = reader.readVarLong();
+		const portalTeleportBoundary = reader.readVarInt();
+		const warningBlocks = reader.readVarInt();
+		const warningTime = reader.readVarInt();
+		return new ClientboundInitializeBorderPacket(x, z, oldDiameter, newDiameter, speed, portalTeleportBoundary, warningBlocks, warningTime);
 	}
 }

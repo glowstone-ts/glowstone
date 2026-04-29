@@ -4,6 +4,12 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+type ChunkBiomeDataEntry = {
+	chunkZ: number;
+	chunkX: number;
+	data: Uint8Array;
+};
+
 export class ClientboundChunksBiomesPacket extends DripleafPacket {
 	static readonly id = 0x0d;
 	static readonly state = State.Play;
@@ -14,16 +20,26 @@ export class ClientboundChunksBiomesPacket extends DripleafPacket {
 	override readonly direction = ClientboundChunksBiomesPacket.direction;
 
 	constructor(
-		// todo
+		public chunkBiomeData: ChunkBiomeDataEntry[]
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeArray(this.chunkBiomeData, (entry) => {
+			writer.writeVarInt(entry.chunkZ);
+			writer.writeVarInt(entry.chunkX);
+			writer.writeByteArray(entry.data);
+		});
 	}
 
 	static read(reader: PacketReader): ClientboundChunksBiomesPacket {
-		// todo
+		const chunkBiomeData = reader.readArray(() => {
+			const chunkZ = reader.readVarInt();
+			const chunkX = reader.readVarInt();
+			const data = reader.readByteArray();
+			return { chunkZ, chunkX, data };
+		});
+		return new ClientboundChunksBiomesPacket(chunkBiomeData);
 	}
 }

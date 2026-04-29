@@ -4,6 +4,18 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+type RecipeBookSetting = {
+	open: boolean;
+	filtering: boolean;
+}
+
+type RecipeBookSettings = {
+	crafting: RecipeBookSetting;
+	furnace: RecipeBookSetting;
+	blastFurnace: RecipeBookSetting;
+	smoker: RecipeBookSetting;
+}
+
 export class ClientboundRecipeBookSettingsPacket extends DripleafPacket {
 	static readonly id = 0x4c;
 	static readonly state = State.Play;
@@ -14,16 +26,30 @@ export class ClientboundRecipeBookSettingsPacket extends DripleafPacket {
 	override readonly direction = ClientboundRecipeBookSettingsPacket.direction;
 
 	constructor(
-		// todo
+		public settings: RecipeBookSettings
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeBoolean(this.settings.crafting.open);
+		writer.writeBoolean(this.settings.crafting.filtering);
+		writer.writeBoolean(this.settings.furnace.open);
+		writer.writeBoolean(this.settings.furnace.filtering);
+		writer.writeBoolean(this.settings.blastFurnace.open);
+		writer.writeBoolean(this.settings.blastFurnace.filtering);
+		writer.writeBoolean(this.settings.smoker.open);
+		writer.writeBoolean(this.settings.smoker.filtering);
 	}
 
 	static read(reader: PacketReader): ClientboundRecipeBookSettingsPacket {
-		// todo
+		const settings: RecipeBookSettings = {
+			crafting: { open: reader.readBoolean(), filtering: reader.readBoolean() },
+			furnace: { open: reader.readBoolean(), filtering: reader.readBoolean() },
+			blastFurnace: { open: reader.readBoolean(), filtering: reader.readBoolean() },
+			smoker: { open: reader.readBoolean(), filtering: reader.readBoolean() },
+		};
+
+		return new ClientboundRecipeBookSettingsPacket(settings);
 	}
 }

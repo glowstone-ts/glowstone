@@ -14,16 +14,20 @@ export class ClientboundSetBorderCenterPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetBorderCenterPacket.direction;
 
 	constructor(
-		// todo
+		public newCenterX: number,
+		public newCenterZ: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeDouble(this.newCenterX);
+		writer.writeDouble(this.newCenterZ);
 	}
 
 	static read(reader: PacketReader): ClientboundSetBorderCenterPacket {
-		// todo
+		const newCenterX = reader.readDouble();
+		const newCenterZ = reader.readDouble();
+		return new ClientboundSetBorderCenterPacket(newCenterX, newCenterZ);
 	}
 }

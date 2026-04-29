@@ -4,6 +4,12 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+type StatisticEntry = {
+	category: number;
+	id: number;
+	value: number;
+};
+
 export class ClientboundAwardStatsPacket extends DripleafPacket {
 	static readonly id = 0x03;
 	static readonly state = State.Play;
@@ -14,16 +20,26 @@ export class ClientboundAwardStatsPacket extends DripleafPacket {
 	override readonly direction = ClientboundAwardStatsPacket.direction;
 
 	constructor(
-		// todo
+		public statistics: StatisticEntry[]
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeArray(this.statistics, (stat) => {
+			writer.writeVarInt(stat.category);
+			writer.writeVarInt(stat.id);
+			writer.writeVarInt(stat.value);
+		});
 	}
 
 	static read(reader: PacketReader): ClientboundAwardStatsPacket {
-		// todo
+		const statistics = reader.readArray(() => {
+			const category = reader.readVarInt();
+			const id = reader.readVarInt();
+			const value = reader.readVarInt();
+			return { category, id, value };
+		});
+		return new ClientboundAwardStatsPacket(statistics);
 	}
 }

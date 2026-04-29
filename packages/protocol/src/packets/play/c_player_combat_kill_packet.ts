@@ -3,6 +3,7 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
 
 export class ClientboundPlayerCombatKillPacket extends DripleafPacket {
 	static readonly id = 0x44;
@@ -14,16 +15,20 @@ export class ClientboundPlayerCombatKillPacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerCombatKillPacket.direction;
 
 	constructor(
-		// todo
+		public playerId: number,
+		public message: UnnamedNbtTag
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.playerId);
+		writer.writeNbt(this.message);
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerCombatKillPacket {
-		// todo
+		const playerId = reader.readVarInt();
+		const message = reader.readNbt();
+		return new ClientboundPlayerCombatKillPacket(playerId, message);
 	}
 }

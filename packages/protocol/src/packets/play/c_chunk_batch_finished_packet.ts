@@ -14,16 +14,17 @@ export class ClientboundChunkBatchFinishedPacket extends DripleafPacket {
 	override readonly direction = ClientboundChunkBatchFinishedPacket.direction;
 
 	constructor(
-		// todo
+		public batchSize: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.batchSize);
 	}
 
 	static read(reader: PacketReader): ClientboundChunkBatchFinishedPacket {
-		// todo
+		const batchSize = reader.readVarInt();
+		return new ClientboundChunkBatchFinishedPacket(batchSize);
 	}
 }

@@ -2,7 +2,12 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
+
+type GlobalPosition = {
+	dimension: string,
+	position: Position
+}
 
 export class ClientboundLoginPacket extends DripleafPacket {
 	static readonly id = 0x31;
@@ -14,16 +19,79 @@ export class ClientboundLoginPacket extends DripleafPacket {
 	override readonly direction = ClientboundLoginPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public isHardcore: boolean,
+		public dimensions: string[],
+		public maxPlayers: number,
+		public viewDistance: number,
+		public simulationDistance: number,
+		public reducedDebugInfo: boolean,
+		public enableRespawnScreen: boolean,
+		public doLimitedCrafting: boolean,
+		public dimensionType: number, // todo: link with registry
+		public dimensionName: string, // todo: if linked with registry, this shouldn't exist.
+		public hashedSeed: bigint,
+		public gameMode: number, // todo: enum
+		public previousGameMode: number | null, // todo: enum
+		public isDebug: boolean,
+		public isFlat: boolean,
+		public lastDeathLocation: GlobalPosition | null,
+		public portalCooldown: number,
+		public seaLevel: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeInt(this.entityId);
+		writer.writeBoolean(this.isHardcore);
+		writer.writeArray(this.dimensions, (dimension) => writer.writeString(dimension));
+		writer.writeVarInt(this.maxPlayers);
+		writer.writeVarInt(this.viewDistance);
+		writer.writeVarInt(this.simulationDistance);
+		writer.writeBoolean(this.reducedDebugInfo);
+		writer.writeBoolean(this.enableRespawnScreen);
+		writer.writeBoolean(this.doLimitedCrafting);
+		writer.writeInt(this.dimensionType);
+		writer.writeString(this.dimensionName);
+		writer.writeLong(this.hashedSeed);
+		writer.writeByte(this.gameMode);
+		writer.writeByte(this.previousGameMode !== null ? this.previousGameMode : -1);
+		writer.writeBoolean(this.isDebug);
+		writer.writeBoolean(this.isFlat);
+		writer.writePrefixedOptional(this.lastDeathLocation, (location) => {
+			writer.writeString(location.dimension);
+			writer.writePosition(location.position);
+		});
+		writer.writeVarInt(this.portalCooldown);
+		writer.writeVarInt(this.seaLevel);
 	}
 
 	static read(reader: PacketReader): ClientboundLoginPacket {
-		// todo
+		const entityId = reader.readInt();
+		const isHardcore = reader.readBoolean();
+		const dimensions = reader.readArray(() => reader.readString());
+		const maxPlayers = reader.readVarInt();
+		const viewDistance = reader.readVarInt();
+		const simulationDistance = reader.readVarInt();
+		const reducedDebugInfo = reader.readBoolean();
+		const enableRespawnScreen = reader.readBoolean();
+		const doLimitedCrafting = reader.readBoolean();
+		const dimensionType = reader.readInt();
+		const dimensionName = reader.readString();
+		const hashedSeed = reader.readLong();
+		const gameMode = reader.readByte();
+		const previousGameModeByte = reader.readByte();
+		const previousGameMode = previousGameModeByte === -1 ? null : previousGameModeByte;
+		const isDebug = reader.readBoolean();
+		const isFlat = reader.readBoolean();
+		const lastDeathLocation = reader.readPrefixedOptional(() => {
+			const dimension = reader.readString();
+			const position = reader.readPosition();
+			return { dimension, position };
+		});
+		const portalCooldown = reader.readVarInt();
+		const seaLevel = reader.readVarInt();
+		return new ClientboundLoginPacket(entityId, isHardcore, dimensions, maxPlayers, viewDistance, simulationDistance, reducedDebugInfo, enableRespawnScreen, doLimitedCrafting, dimensionType, dimensionName, hashedSeed, gameMode, previousGameMode, isDebug, isFlat, lastDeathLocation, portalCooldown, seaLevel);
 	}
 }

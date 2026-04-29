@@ -14,16 +14,19 @@ export class ClientboundSetEquipmentPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetEquipmentPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		// todo: waiting on item stack
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		throw new Error('todo: waiting on item stack');
 	}
 
 	static read(reader: PacketReader): ClientboundSetEquipmentPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		throw new Error('todo: waiting on item stack');
 	}
 }

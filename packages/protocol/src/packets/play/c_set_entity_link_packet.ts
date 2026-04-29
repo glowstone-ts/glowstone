@@ -14,16 +14,20 @@ export class ClientboundSetEntityLinkPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetEntityLinkPacket.direction;
 
 	constructor(
-		// todo
+		public sourceId: number,
+		public destId: number,
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeInt(this.sourceId);
+		writer.writeInt(this.destId);
 	}
 
 	static read(reader: PacketReader): ClientboundSetEntityLinkPacket {
-		// todo
+		const sourceId = reader.readInt();
+		const destId = reader.readInt();
+		return new ClientboundSetEntityLinkPacket(sourceId, destId);
 	}
 }

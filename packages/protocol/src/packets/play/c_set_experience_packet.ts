@@ -14,16 +14,23 @@ export class ClientboundSetExperiencePacket extends DripleafPacket {
 	override readonly direction = ClientboundSetExperiencePacket.direction;
 
 	constructor(
-		// todo
+		public experienceProgress: number,
+		public totalExperience: number,
+		public experienceLevel: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeFloat(this.experienceProgress);
+		writer.writeVarInt(this.totalExperience);
+		writer.writeVarInt(this.experienceLevel);
 	}
 
 	static read(reader: PacketReader): ClientboundSetExperiencePacket {
-		// todo
+		const experienceProgress = reader.readFloat();
+		const totalExperience = reader.readVarInt();
+		const experienceLevel = reader.readVarInt();
+		return new ClientboundSetExperiencePacket(experienceProgress, totalExperience, experienceLevel);
 	}
 }

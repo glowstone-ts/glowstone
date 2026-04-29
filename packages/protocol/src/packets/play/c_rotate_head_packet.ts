@@ -14,16 +14,20 @@ export class ClientboundRotateHeadPacket extends DripleafPacket {
 	override readonly direction = ClientboundRotateHeadPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public headYaw: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writeByte(this.headYaw);
 	}
 
 	static read(reader: PacketReader): ClientboundRotateHeadPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const headYaw = reader.readByte();
+		return new ClientboundRotateHeadPacket(entityId, headYaw);
 	}
 }

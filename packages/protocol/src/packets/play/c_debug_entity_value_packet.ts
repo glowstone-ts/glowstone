@@ -14,7 +14,8 @@ export class ClientboundDebugEntityValuePacket extends DripleafPacket {
 	override readonly direction = ClientboundDebugEntityValuePacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public update: any // todo
 	) {
 		super();
 	}

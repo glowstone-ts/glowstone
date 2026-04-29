@@ -14,16 +14,17 @@ export class ClientboundSetHeldSlotPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetHeldSlotPacket.direction;
 
 	constructor(
-		// todo
+		public slot: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.slot);
 	}
 
 	static read(reader: PacketReader): ClientboundSetHeldSlotPacket {
-		// todo
+		const slot = reader.readVarInt();
+		return new ClientboundSetHeldSlotPacket(slot);
 	}
 }

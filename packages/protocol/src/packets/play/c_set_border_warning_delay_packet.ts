@@ -14,16 +14,17 @@ export class ClientboundSetBorderWarningDelayPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetBorderWarningDelayPacket.direction;
 
 	constructor(
-		// todo
+		public delay: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.delay);
 	}
 
 	static read(reader: PacketReader): ClientboundSetBorderWarningDelayPacket {
-		// todo
+		const delay = reader.readVarInt();
+		return new ClientboundSetBorderWarningDelayPacket(delay);
 	}
 }

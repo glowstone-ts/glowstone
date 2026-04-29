@@ -14,7 +14,7 @@ export class ClientboundLevelChunkWithLightPacket extends DripleafPacket {
 	override readonly direction = ClientboundLevelChunkWithLightPacket.direction;
 
 	constructor(
-		// todo
+		
 	) {
 		super();
 	}

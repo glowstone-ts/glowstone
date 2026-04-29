@@ -13,17 +13,16 @@ export class ClientboundLowDiskSpaceWarningPacket extends DripleafPacket {
 	override readonly state = ClientboundLowDiskSpaceWarningPacket.state;
 	override readonly direction = ClientboundLowDiskSpaceWarningPacket.direction;
 
-	constructor(
-		// todo
-	) {
+	constructor() {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		void writer;
 	}
 
 	static read(reader: PacketReader): ClientboundLowDiskSpaceWarningPacket {
-		// todo
+		void reader;
+		return new ClientboundLowDiskSpaceWarningPacket();
 	}
 }

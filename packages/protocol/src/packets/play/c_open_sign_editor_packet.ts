@@ -2,7 +2,7 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
 
 export class ClientboundOpenSignEditorPacket extends DripleafPacket {
 	static readonly id = 0x3c;
@@ -14,16 +14,20 @@ export class ClientboundOpenSignEditorPacket extends DripleafPacket {
 	override readonly direction = ClientboundOpenSignEditorPacket.direction;
 
 	constructor(
-		// todo
+		public position: Position,
+		public isFrontText: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writePosition(this.position);
+		writer.writeBoolean(this.isFrontText);
 	}
 
 	static read(reader: PacketReader): ClientboundOpenSignEditorPacket {
-		// todo
+		const position = reader.readPosition();
+		const isFrontText = reader.readBoolean();
+		return new ClientboundOpenSignEditorPacket(position, isFrontText);
 	}
 }

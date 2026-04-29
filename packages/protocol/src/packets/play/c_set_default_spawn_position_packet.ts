@@ -2,7 +2,18 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
+
+type GlobalPosition = {
+	dimension: string;
+	position: Position;
+}
+
+type RespawnData = {
+	globalPosition: GlobalPosition;
+	yaw: number;
+	pitch: number;
+}
 
 export class ClientboundSetDefaultSpawnPositionPacket extends DripleafPacket {
 	static readonly id = 0x61;
@@ -14,16 +25,30 @@ export class ClientboundSetDefaultSpawnPositionPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetDefaultSpawnPositionPacket.direction;
 
 	constructor(
-		// todo
+		public respawnData: RespawnData
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeString(this.respawnData.globalPosition.dimension);
+		writer.writePosition(this.respawnData.globalPosition.position);
+		writer.writeFloat(this.respawnData.yaw);
+		writer.writeFloat(this.respawnData.pitch);
 	}
 
 	static read(reader: PacketReader): ClientboundSetDefaultSpawnPositionPacket {
-		// todo
+		const dimension = reader.readString();
+		const position = reader.readPosition();
+		const yaw = reader.readFloat();
+		const pitch = reader.readFloat();
+		return new ClientboundSetDefaultSpawnPositionPacket({
+			globalPosition: {
+				dimension,
+				position
+			},
+			yaw,
+			pitch
+		});
 	}
 }

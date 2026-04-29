@@ -14,16 +14,17 @@ export class ClientboundSetCameraPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetCameraPacket.direction;
 
 	constructor(
-		// todo
+		public cameraId: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.cameraId);
 	}
 
 	static read(reader: PacketReader): ClientboundSetCameraPacket {
-		// todo
+		const cameraId = reader.readVarInt();
+		return new ClientboundSetCameraPacket(cameraId);
 	}
 }

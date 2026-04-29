@@ -3,6 +3,52 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
+
+export enum PlayerInfoUpdateAction {
+	AddPlayer = 0x01,
+	InitializeChat = 0x02,
+	UpdateGameMode = 0x04,
+	UpdateListed = 0x08,
+	UpdateLatency = 0x10,
+	UpdateDisplayName = 0x20,
+	UpdateHat = 0x40,
+	UpdateListOrder = 0x80
+}
+
+export type GameProfileProperty = {
+	name: string;
+	value: string;
+	signature: string | null;
+}
+
+export type PlayerInfoProfile = {
+	name: string;
+	properties: GameProfileProperty[];
+}
+
+export type PlayerInfoPublicKey = {
+	expireTime: bigint;
+	keyBytes: Uint8Array;
+	keySignature: Uint8Array;
+}
+
+export type PlayerInfoChatSession = {
+	uuid: string;
+	publicKey: PlayerInfoPublicKey;
+}
+
+export type PlayerInfoEntry = {
+	uuid: string;
+	player?: PlayerInfoProfile;
+	chatSession?: PlayerInfoChatSession | null;
+	gameMode?: number;
+	listed?: boolean;
+	latency?: number;
+	displayName?: UnnamedNbtTag | null;
+	listOrder?: number;
+	showHat?: boolean;
+}
 
 export class ClientboundPlayerInfoUpdatePacket extends DripleafPacket {
 	static readonly id = 0x46;
@@ -14,16 +60,127 @@ export class ClientboundPlayerInfoUpdatePacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerInfoUpdatePacket.direction;
 
 	constructor(
-		// todo
+		public actions: number,
+		public entries: PlayerInfoEntry[]
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeUnsignedByte(this.actions);
+		writer.writeVarInt(this.entries.length);
+
+		for (const entry of this.entries) {
+			writer.writeUUID(entry.uuid);
+
+			if (this.actions & PlayerInfoUpdateAction.AddPlayer) {
+				if (entry.player == null)
+					throw new Error("Player info update doesn't have add-player profile data");
+
+				writer.writeString(entry.player.name, 16);
+				writer.writeArray(entry.player.properties, (property) => {
+					writer.writeString(property.name, 64);
+					writer.writeString(property.value);
+					writer.writePrefixedOptional(property.signature, signature => writer.writeString(signature, 1024));
+				});
+			}
+
+			if (this.actions & PlayerInfoUpdateAction.InitializeChat) {
+				writer.writePrefixedOptional(entry.chatSession, session => {
+					writer.writeUUID(session.uuid);
+					writer.writeLong(session.publicKey.expireTime);
+					writer.writeByteArray(session.publicKey.keyBytes, 512);
+					writer.writeByteArray(session.publicKey.keySignature, 4096);
+				});
+			}
+
+			if (this.actions & PlayerInfoUpdateAction.UpdateGameMode) {
+				if (entry.gameMode == null)
+					throw new Error("Player info update is missing game mode data");
+				writer.writeVarInt(entry.gameMode);
+			}
+
+			if (this.actions & PlayerInfoUpdateAction.UpdateListed) {
+				if (entry.listed == null)
+					throw new Error("Player info update is missing listed flag data");
+				writer.writeBoolean(entry.listed);
+			}
+
+			if (this.actions & PlayerInfoUpdateAction.UpdateLatency) {
+				if (entry.latency == null)
+					throw new Error("Player info update is missing latency data");
+				writer.writeVarInt(entry.latency);
+			}
+
+			if (this.actions & PlayerInfoUpdateAction.UpdateDisplayName)
+				writer.writePrefixedOptional(entry.displayName, displayName => writer.writeNbt(displayName));
+
+			if (this.actions & PlayerInfoUpdateAction.UpdateHat) {
+				if (entry.showHat == null)
+					throw new Error("Player info update is missing hat visibility data");
+				writer.writeBoolean(entry.showHat);
+			}
+
+			if (this.actions & PlayerInfoUpdateAction.UpdateListOrder) {
+				if (entry.listOrder == null)
+					throw new Error("Player info update is missing list order data");
+				writer.writeVarInt(entry.listOrder);
+			}
+		}
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerInfoUpdatePacket {
-		// todo
+		const actions = reader.readUnsignedByte();
+		const entries = reader.readArray(() => {
+			const entry: PlayerInfoEntry = {
+				uuid: reader.readUUID()
+			};
+
+			if (actions & PlayerInfoUpdateAction.AddPlayer) {
+				const name = reader.readString();
+				const propertyCount = reader.readVarInt();
+				const properties: GameProfileProperty[] = [];
+				for (let propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++) {
+					const propertyName = reader.readString();
+					const propertyValue = reader.readString();
+					const signature = reader.readPrefixedOptional(() => reader.readString());
+					properties.push({ name: propertyName, value: propertyValue, signature });
+				}
+				entry.player = { name, properties };
+			}
+
+			if (actions & PlayerInfoUpdateAction.InitializeChat) {
+				entry.chatSession = reader.readPrefixedOptional(() => ({
+					uuid: reader.readUUID(),
+					publicKey: {
+						expireTime: reader.readLong(),
+						keyBytes: reader.readByteArray(),
+						keySignature: reader.readByteArray()
+					}
+				}));
+			}
+
+			if (actions & PlayerInfoUpdateAction.UpdateGameMode)
+				entry.gameMode = reader.readVarInt();
+
+			if (actions & PlayerInfoUpdateAction.UpdateListed)
+				entry.listed = reader.readBoolean();
+
+			if (actions & PlayerInfoUpdateAction.UpdateLatency)
+				entry.latency = reader.readVarInt();
+
+			if (actions & PlayerInfoUpdateAction.UpdateDisplayName)
+				entry.displayName = reader.readPrefixedOptional(() => reader.readNbt());
+
+			if (actions & PlayerInfoUpdateAction.UpdateHat)
+				entry.showHat = reader.readBoolean();
+
+			if (actions & PlayerInfoUpdateAction.UpdateListOrder)
+				entry.listOrder = reader.readVarInt();
+
+			return entry;
+		});
+
+		return new ClientboundPlayerInfoUpdatePacket(actions, entries);
 	}
 }

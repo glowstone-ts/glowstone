@@ -14,16 +14,17 @@ export class ClientboundSetBorderSizePacket extends DripleafPacket {
 	override readonly direction = ClientboundSetBorderSizePacket.direction;
 
 	constructor(
-		// todo
+		public size: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeDouble(this.size);
 	}
 
 	static read(reader: PacketReader): ClientboundSetBorderSizePacket {
-		// todo
+		const size = reader.readDouble();
+		return new ClientboundSetBorderSizePacket(size);
 	}
 }

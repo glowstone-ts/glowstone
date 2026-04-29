@@ -14,7 +14,10 @@ export class ClientboundContainerSetSlotPacket extends DripleafPacket {
 	override readonly direction = ClientboundContainerSetSlotPacket.direction;
 
 	constructor(
-		// todo
+		public windowId: number,
+		public stateId: number,
+		public slot: number,
+		public slotData: any // todo
 	) {
 		super();
 	}

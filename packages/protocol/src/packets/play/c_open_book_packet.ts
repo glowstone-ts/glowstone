@@ -4,6 +4,11 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+enum Hand {
+	MainHand = 0,
+	OffHand = 1
+}
+
 export class ClientboundOpenBookPacket extends DripleafPacket {
 	static readonly id = 0x3a;
 	static readonly state = State.Play;
@@ -14,16 +19,17 @@ export class ClientboundOpenBookPacket extends DripleafPacket {
 	override readonly direction = ClientboundOpenBookPacket.direction;
 
 	constructor(
-		// todo
+		public hand: Hand
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.hand);
 	}
 
 	static read(reader: PacketReader): ClientboundOpenBookPacket {
-		// todo
+		const hand = reader.readVarInt();
+		return new ClientboundOpenBookPacket(hand);
 	}
 }

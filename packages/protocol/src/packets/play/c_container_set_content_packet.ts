@@ -14,7 +14,10 @@ export class ClientboundContainerSetContentPacket extends DripleafPacket {
 	override readonly direction = ClientboundContainerSetContentPacket.direction;
 
 	constructor(
-		// todo
+		public windowId: number,
+		public stateId: number,
+		public slots: any[], // todo
+		public carriedItem: any // todo
 	) {
 		super();
 	}

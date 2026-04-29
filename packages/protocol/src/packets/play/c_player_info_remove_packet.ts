@@ -14,16 +14,17 @@ export class ClientboundPlayerInfoRemovePacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerInfoRemovePacket.direction;
 
 	constructor(
-		// todo
+		public profileIds: string[]
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeArray(this.profileIds, (id) => writer.writeUUID(id));
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerInfoRemovePacket {
-		// todo
+		const profileIds = reader.readArray(() => reader.readUUID());
+		return new ClientboundPlayerInfoRemovePacket(profileIds);
 	}
 }

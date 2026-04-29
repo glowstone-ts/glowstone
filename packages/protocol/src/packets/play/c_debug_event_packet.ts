@@ -14,7 +14,7 @@ export class ClientboundDebugEventPacket extends DripleafPacket {
 	override readonly direction = ClientboundDebugEventPacket.direction;
 
 	constructor(
-		// todo
+		public event: any // todo		
 	) {
 		super();
 	}

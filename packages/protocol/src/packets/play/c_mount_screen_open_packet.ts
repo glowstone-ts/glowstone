@@ -14,16 +14,23 @@ export class ClientboundMountScreenOpenPacket extends DripleafPacket {
 	override readonly direction = ClientboundMountScreenOpenPacket.direction;
 
 	constructor(
-		// todo
+		public containerId: number,
+		public inventoryColumns: number,
+		public entityId: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.containerId);
+		writer.writeVarInt(this.inventoryColumns);
+		writer.writeInt(this.entityId);
 	}
 
 	static read(reader: PacketReader): ClientboundMountScreenOpenPacket {
-		// todo
+		const containerId = reader.readVarInt();
+		const inventoryColumns = reader.readVarInt();
+		const entityId = reader.readInt();
+		return new ClientboundMountScreenOpenPacket(containerId, inventoryColumns, entityId);
 	}
 }

@@ -14,16 +14,20 @@ export class ClientboundEntityEventPacket extends DripleafPacket {
 	override readonly direction = ClientboundEntityEventPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public entityStatus: number // todo: enum
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writeByte(this.entityStatus);
 	}
 
 	static read(reader: PacketReader): ClientboundEntityEventPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const entityStatus = reader.readByte();
+		return new ClientboundEntityEventPacket(entityId, entityStatus);
 	}
 }

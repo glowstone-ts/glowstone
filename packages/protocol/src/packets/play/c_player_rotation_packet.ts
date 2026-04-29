@@ -14,16 +14,26 @@ export class ClientboundPlayerRotationPacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerRotationPacket.direction;
 
 	constructor(
-		// todo
+		public yaw: number,
+		public relativeYaw: boolean,
+		public pitch: number,
+		public relativePitch: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeFloat(this.yaw);
+		writer.writeBoolean(this.relativeYaw);
+		writer.writeFloat(this.pitch);
+		writer.writeBoolean(this.relativePitch);
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerRotationPacket {
-		// todo
+		const yaw = reader.readFloat();
+		const relativeYaw = reader.readBoolean();
+		const pitch = reader.readFloat();
+		const relativePitch = reader.readBoolean();
+		return new ClientboundPlayerRotationPacket(yaw, relativeYaw, pitch, relativePitch);
 	}
 }

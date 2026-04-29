@@ -4,6 +4,28 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+const DisplaySlot = {
+  List: { id: 0, name: 'list' },
+  Sidebar: { id: 1, name: 'sidebar' },
+  BelowName: { id: 2, name: 'below_name' },
+	TeamBlack: { id: 3, name: 'sidebar.team.black' },
+	TeamDarkBlue: { id: 4, name: 'sidebar.team.dark_blue' },
+	TeamDarkGreen: { id: 5, name: 'sidebar.team.dark_green' },
+	TeamDarkAqua: { id: 6, name: 'sidebar.team.dark_aqua' },
+	TeamDarkRed: { id: 7, name: 'sidebar.team.dark_red' },
+	TeamDarkPurple: { id: 8, name: 'sidebar.team.dark_purple' },
+	TeamGold: { id: 9, name: 'sidebar.team.gold' },
+	TeamGray: { id: 10, name: 'sidebar.team.gray' },
+	TeamDarkGray: { id: 11, name: 'sidebar.team.dark_gray' },
+	TeamBlue: { id: 12, name: 'sidebar.team.blue' },
+	TeamGreen: { id: 13, name: 'sidebar.team.green' },
+	TeamAqua: { id: 14, name: 'sidebar.team.aqua' },
+	TeamRed: { id: 15, name: 'sidebar.team.red' },
+	TeamLightPurple: { id: 16, name: 'sidebar.team.light_purple' },
+	TeamYellow: { id: 17, name: 'sidebar.team.yellow' },
+	TeamWhite: { id: 18, name: 'sidebar.team.white' },
+} as const;
+
 export class ClientboundSetDisplayObjectivePacket extends DripleafPacket {
 	static readonly id = 0x62;
 	static readonly state = State.Play;
@@ -14,16 +36,22 @@ export class ClientboundSetDisplayObjectivePacket extends DripleafPacket {
 	override readonly direction = ClientboundSetDisplayObjectivePacket.direction;
 
 	constructor(
-		// todo
+		public displaySlot: typeof DisplaySlot[keyof typeof DisplaySlot],
+		public objectiveName: string,
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.displaySlot.id);
+		writer.writeString(this.objectiveName);
 	}
 
 	static read(reader: PacketReader): ClientboundSetDisplayObjectivePacket {
-		// todo
+		const displaySlotId = reader.readVarInt();
+		const displaySlot = Object.values(DisplaySlot).find(slot => slot.id === displaySlotId);
+		if (!displaySlot) throw new Error(`Unknown display slot id: ${displaySlotId}`);
+		const objectiveName = reader.readString();
+		return new ClientboundSetDisplayObjectivePacket(displaySlot, objectiveName);
 	}
 }

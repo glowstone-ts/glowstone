@@ -2,7 +2,7 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type LpVec3 } from '../../types';
 
 export class ClientboundAddEntityPacket extends DripleafPacket {
 	static readonly id = 0x01;
@@ -14,16 +14,47 @@ export class ClientboundAddEntityPacket extends DripleafPacket {
 	override readonly direction = ClientboundAddEntityPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public entityUuid: string,
+		public type: number,
+		public x: number,
+		public y: number,
+		public z: number,
+		public velocity: LpVec3,
+		public pitch: number,
+		public yaw: number,
+		public headYaw: number,
+		public data: number,
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writeUUID(this.entityUuid);
+		writer.writeVarInt(this.type);
+		writer.writeDouble(this.x);
+		writer.writeDouble(this.y);
+		writer.writeDouble(this.z);
+		writer.writeLpVec3(this.velocity);
+		writer.writeAngle(this.pitch);
+		writer.writeAngle(this.yaw);
+		writer.writeAngle(this.headYaw);
+		writer.writeVarInt(this.data);
 	}
 
 	static read(reader: PacketReader): ClientboundAddEntityPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const entityUuid = reader.readUUID();
+		const type = reader.readVarInt();
+		const x = reader.readDouble();
+		const y = reader.readDouble();
+		const z = reader.readDouble();
+		const velocity = reader.readLpVec3();
+		const pitch = reader.readAngle();
+		const yaw = reader.readAngle();
+		const headYaw = reader.readAngle();
+		const data = reader.readVarInt();
+		return new ClientboundAddEntityPacket(entityId, entityUuid, type, x, y, z, velocity, pitch, yaw, headYaw, data);
 	}
 }

@@ -14,16 +14,42 @@ export class ClientboundPlayerLookAtPacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerLookAtPacket.direction;
 
 	constructor(
-		// todo
+		public fromAnchor: number, // todo: enum
+		public x: number,
+		public y: number,
+		public z: number,
+		public atEntity: boolean,
+		public entity: number | null,
+		public toAnchor: number | null // todo: enum
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.fromAnchor);
+		writer.writeDouble(this.x);
+		writer.writeDouble(this.y);
+		writer.writeDouble(this.z);
+		writer.writeBoolean(this.atEntity);
+		if (this.atEntity && this.toAnchor != null && this.entity != null) {
+			writer.writeVarInt(this.entity);
+			writer.writeVarInt(this.toAnchor);
+		}
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerLookAtPacket {
-		// todo
+		const fromAnchor = reader.readVarInt();
+		const x = reader.readDouble();
+		const y = reader.readDouble();
+		const z = reader.readDouble();
+		const atEntity = reader.readBoolean();
+		let entity: number | null = null;
+		let toAnchor: number | null = null;
+		if (atEntity) {
+			entity = reader.readVarInt();
+			toAnchor = reader.readVarInt();
+		}
+
+		return new ClientboundPlayerLookAtPacket(fromAnchor, x, y, z, atEntity, entity, toAnchor);
 	}
 }

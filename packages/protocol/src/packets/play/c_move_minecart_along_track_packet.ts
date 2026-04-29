@@ -14,7 +14,8 @@ export class ClientboundMoveMinecartAlongTrackPacket extends DripleafPacket {
 	override readonly direction = ClientboundMoveMinecartAlongTrackPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		// todo: new minecart behavior???, it isn't even close to being documented and i don't have time for this
 	) {
 		super();
 	}

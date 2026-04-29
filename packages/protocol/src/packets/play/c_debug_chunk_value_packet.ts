@@ -14,7 +14,9 @@ export class ClientboundDebugChunkValuePacket extends DripleafPacket {
 	override readonly direction = ClientboundDebugChunkValuePacket.direction;
 
 	constructor(
-		// todo
+		public chunkZ: number,
+		public chunkX: number,
+		public update: any // todo
 	) {
 		super();
 	}

@@ -14,16 +14,20 @@ export class ClientboundCooldownPacket extends DripleafPacket {
 	override readonly direction = ClientboundCooldownPacket.direction;
 
 	constructor(
-		// todo
+		public cooldownGroup: string,
+		public cooldownTicks: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeString(this.cooldownGroup);
+		writer.writeVarInt(this.cooldownTicks);
 	}
 
 	static read(reader: PacketReader): ClientboundCooldownPacket {
-		// todo
+		const cooldownGroup = reader.readString();
+		const cooldownTicks = reader.readVarInt();
+		return new ClientboundCooldownPacket(cooldownGroup, cooldownTicks);
 	}
 }

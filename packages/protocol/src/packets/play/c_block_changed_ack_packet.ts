@@ -14,16 +14,17 @@ export class ClientboundBlockChangedAckPacket extends DripleafPacket {
 	override readonly direction = ClientboundBlockChangedAckPacket.direction;
 
 	constructor(
-		// todo
+		public sequenceId: number,
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.sequenceId);
 	}
 
 	static read(reader: PacketReader): ClientboundBlockChangedAckPacket {
-		// todo
+		const sequenceId = reader.readVarInt();
+		return new ClientboundBlockChangedAckPacket(sequenceId);
 	}
 }

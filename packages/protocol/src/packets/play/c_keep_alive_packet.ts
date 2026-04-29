@@ -14,16 +14,17 @@ export class ClientboundKeepAlivePacket extends DripleafPacket {
 	override readonly direction = ClientboundKeepAlivePacket.direction;
 
 	constructor(
-		// todo
+		public keepAliveId: bigint
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarLong(this.keepAliveId);
 	}
 
 	static read(reader: PacketReader): ClientboundKeepAlivePacket {
-		// todo
+		const keepAliveId = reader.readVarLong();
+		return new ClientboundKeepAlivePacket(keepAliveId);
 	}
 }

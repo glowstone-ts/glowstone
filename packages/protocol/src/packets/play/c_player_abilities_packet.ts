@@ -4,6 +4,15 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+type Abilities = {
+	invulnerable: boolean;
+	isFlying: boolean;
+	canFly: boolean;
+	instabuild: boolean;
+	flyingSpeed: number;
+	walkingSpeed: number;
+};
+
 export class ClientboundPlayerAbilitiesPacket extends DripleafPacket {
 	static readonly id = 0x40;
 	static readonly state = State.Play;
@@ -14,16 +23,32 @@ export class ClientboundPlayerAbilitiesPacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerAbilitiesPacket.direction;
 
 	constructor(
-		// todo
+		public abilities: Abilities
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeByte(
+			(this.abilities.invulnerable ? 0x01 : 0) |
+			(this.abilities.isFlying ? 0x02 : 0) |
+			(this.abilities.canFly ? 0x04 : 0) |
+			(this.abilities.instabuild ? 0x08 : 0)
+		);
+		writer.writeFloat(this.abilities.flyingSpeed);
+		writer.writeFloat(this.abilities.walkingSpeed);
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerAbilitiesPacket {
-		// todo
+		const flags = reader.readByte();
+		const abilities = {
+			invulnerable: (flags & 0x01) !== 0,
+			isFlying: (flags & 0x02) !== 0,
+			canFly: (flags & 0x04) !== 0,
+			instabuild: (flags & 0x08) !== 0,
+			flyingSpeed: reader.readFloat(),
+			walkingSpeed: reader.readFloat()
+		};
+		return new ClientboundPlayerAbilitiesPacket(abilities);
 	}
 }

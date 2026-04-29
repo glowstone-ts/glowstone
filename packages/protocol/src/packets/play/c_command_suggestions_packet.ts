@@ -3,6 +3,12 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
+
+type MatchEntry = {
+	match: string;
+	tooltip: UnnamedNbtTag | null;
+}
 
 export class ClientboundCommandSuggestionsPacket extends DripleafPacket {
 	static readonly id = 0x0f;
@@ -14,16 +20,33 @@ export class ClientboundCommandSuggestionsPacket extends DripleafPacket {
 	override readonly direction = ClientboundCommandSuggestionsPacket.direction;
 
 	constructor(
-		// todo
+		public transactionId: number,
+		public start: number,
+		public length: number,
+		public matches: MatchEntry[]
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.transactionId);
+		writer.writeVarInt(this.start);
+		writer.writeVarInt(this.length);
+		writer.writeArray(this.matches, (entry) => {
+			writer.writeString(entry.match);
+			writer.writePrefixedOptional(entry.tooltip, (tooltip) => writer.writeNbt(tooltip));
+		});
 	}
 
 	static read(reader: PacketReader): ClientboundCommandSuggestionsPacket {
-		// todo
+		const transactionId = reader.readVarInt();
+		const start = reader.readVarInt();
+		const length = reader.readVarInt();
+		const matches = reader.readArray(() => {
+			const match = reader.readString();
+			const tooltip = reader.readPrefixedOptional(() => reader.readNbt());
+			return { match, tooltip };
+		});
+		return new ClientboundCommandSuggestionsPacket(transactionId, start, length, matches);
 	}
 }

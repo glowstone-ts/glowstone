@@ -4,6 +4,29 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+export enum Relative {
+	X = 1 << 0,
+	Y = 1 << 1,
+	Z = 1 << 2,
+	Yaw = 1 << 3,
+	Pitch = 1 << 4,
+	DeltaX = 1 << 5,
+	DeltaY = 1 << 6,
+	DeltaZ = 1 << 7,
+	YawDelta = 1 << 8
+}
+
+export type PositionMoveRotation = {
+	x: number;
+	y: number;
+	z: number;
+	dx: number;
+	dy: number;
+	dz: number;
+	yaw: number;
+	pitch: number;
+}
+
 export class ClientboundPlayerPositionPacket extends DripleafPacket {
 	static readonly id = 0x48;
 	static readonly state = State.Play;
@@ -14,16 +37,39 @@ export class ClientboundPlayerPositionPacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerPositionPacket.direction;
 
 	constructor(
-		// todo
+		public teleportId: number,
+		public change: PositionMoveRotation,
+		public relatives: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.teleportId);
+		writer.writeDouble(this.change.x);
+		writer.writeDouble(this.change.y);
+		writer.writeDouble(this.change.z);
+		writer.writeDouble(this.change.dx);
+		writer.writeDouble(this.change.dy);
+		writer.writeDouble(this.change.dz);
+		writer.writeFloat(this.change.yaw);
+		writer.writeFloat(this.change.pitch);
+		writer.writeInt(this.relatives);
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerPositionPacket {
-		// todo
+		const teleportId = reader.readVarInt();
+		const change: PositionMoveRotation = {
+			x: reader.readDouble(),
+			y: reader.readDouble(),
+			z: reader.readDouble(),
+			dx: reader.readDouble(),
+			dy: reader.readDouble(),
+			dz: reader.readDouble(),
+			yaw: reader.readFloat(),
+			pitch: reader.readFloat()
+		};
+		const relatives = reader.readInt();
+		return new ClientboundPlayerPositionPacket(teleportId, change, relatives);
 	}
 }

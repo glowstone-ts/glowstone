@@ -3,6 +3,7 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
 
 export class ClientboundDisguisedChatPacket extends DripleafPacket {
 	static readonly id = 0x21;
@@ -14,16 +15,26 @@ export class ClientboundDisguisedChatPacket extends DripleafPacket {
 	override readonly direction = ClientboundDisguisedChatPacket.direction;
 
 	constructor(
-		// todo
+		public message: UnnamedNbtTag,
+		public chatType: string, // Either the type of chat in the minecraft:chat_type registry, defined by the Registry Data packet, or an inline definition.
+		public senderName: UnnamedNbtTag,
+		public targetName: UnnamedNbtTag | null
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeNbt(this.message);
+		writer.writeString(this.chatType);
+		writer.writeNbt(this.senderName);
+		writer.writePrefixedOptional(this.targetName, (targetName) => writer.writeNbt(targetName));
 	}
 
 	static read(reader: PacketReader): ClientboundDisguisedChatPacket {
-		// todo
+		const message = reader.readNbt();
+		const chatType = reader.readString();
+		const senderName = reader.readNbt();
+		const targetName = reader.readPrefixedOptional(() => reader.readNbt());
+		return new ClientboundDisguisedChatPacket(message, chatType, senderName, targetName);
 	}
 }

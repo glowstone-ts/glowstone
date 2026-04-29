@@ -2,7 +2,7 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
 
 export class ClientboundMoveVehiclePacket extends DripleafPacket {
 	static readonly id = 0x39;
@@ -14,16 +14,23 @@ export class ClientboundMoveVehiclePacket extends DripleafPacket {
 	override readonly direction = ClientboundMoveVehiclePacket.direction;
 
 	constructor(
-		// todo
+		public position: Position,
+		public yaw: number,
+		public pitch: number,
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writePosition(this.position);
+		writer.writeFloat(this.yaw);
+		writer.writeFloat(this.pitch);
 	}
 
 	static read(reader: PacketReader): ClientboundMoveVehiclePacket {
-		// todo
+		const position = reader.readPosition();
+		const yaw = reader.readFloat();
+		const pitch = reader.readFloat();
+		return new ClientboundMoveVehiclePacket(position, yaw, pitch);
 	}
 }

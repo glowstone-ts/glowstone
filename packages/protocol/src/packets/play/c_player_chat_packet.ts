@@ -3,6 +3,19 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
+
+type SignedMessageBody = {
+	content: string;
+	timestamp: bigint;
+	salt: bigint;
+}
+
+enum FilterType {
+	PassThrough = 0,
+	FullyFiltered = 1,
+	PartiallyFiltered = 2
+}
 
 export class ClientboundPlayerChatPacket extends DripleafPacket {
 	static readonly id = 0x41;
@@ -14,16 +27,43 @@ export class ClientboundPlayerChatPacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerChatPacket.direction;
 
 	constructor(
-		// todo
+		public globalIndex: number,
+		public sender: string,
+		public index: number,
+		public signature: Uint8Array | null,
+		public body: SignedMessageBody,
+		public unsignedContent: UnnamedNbtTag | null,
+		public filterMask: FilterType,
+		public chatType: number | null // todo: registry
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.globalIndex);
+		writer.writeUUID(this.sender);
+		writer.writeVarInt(this.index);
+		writer.writePrefixedOptional(this.signature, (sig) => writer.writeByteArray(sig));
+		writer.writeString(this.body.content);
+		writer.writeLong(this.body.timestamp);
+		writer.writeLong(this.body.salt);
+		writer.writePrefixedOptional(this.unsignedContent, (content) => writer.writeNbt(content));
+		writer.writeByte(this.filterMask);
+		writer.writeVarInt(this.chatType ? this.chatType : 0); // todo
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerChatPacket {
-		// todo
+		const globalIndex = reader.readVarInt();
+		const sender = reader.readUUID();
+		const index = reader.readVarInt();
+		const signature = reader.readPrefixedOptional(() => reader.readByteArray());
+		const content = reader.readString();
+		const timestamp = reader.readLong();
+		const salt = reader.readLong();
+		const body = { content, timestamp, salt };
+		const unsignedContent = reader.readPrefixedOptional(() => reader.readNbt());
+		const filterMask = reader.readUnsignedByte() as FilterType;
+		const chatType = reader.readVarInt();
+		return new ClientboundPlayerChatPacket(globalIndex, sender, index, signature, body, unsignedContent, filterMask, chatType);
 	}
 }

@@ -14,16 +14,20 @@ export class ClientboundSetChunkCacheCenterPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetChunkCacheCenterPacket.direction;
 
 	constructor(
-		// todo
+		public x: number,
+		public z: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.x);
+		writer.writeVarInt(this.z);
 	}
 
 	static read(reader: PacketReader): ClientboundSetChunkCacheCenterPacket {
-		// todo
+		const x = reader.readVarInt();
+		const z = reader.readVarInt();
+		return new ClientboundSetChunkCacheCenterPacket(x, z);
 	}
 }

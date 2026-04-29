@@ -4,6 +4,13 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+export enum Difficulty {
+	Peaceful = 0,
+	Easy = 1,
+	Normal = 2,
+	Hard = 3
+}
+
 export class ClientboundChangeDifficultyPacket extends DripleafPacket {
 	static readonly id = 0x0a;
 	static readonly state = State.Play;
@@ -14,16 +21,20 @@ export class ClientboundChangeDifficultyPacket extends DripleafPacket {
 	override readonly direction = ClientboundChangeDifficultyPacket.direction;
 
 	constructor(
-		// todo
+		public difficulty: Difficulty,
+		public locked: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeUnsignedByte(this.difficulty);
+		writer.writeBoolean(this.locked);
 	}
 
 	static read(reader: PacketReader): ClientboundChangeDifficultyPacket {
-		// todo
+		const difficulty = reader.readUnsignedByte();
+		const locked = reader.readBoolean();
+		return new ClientboundChangeDifficultyPacket(difficulty, locked);
 	}
 }

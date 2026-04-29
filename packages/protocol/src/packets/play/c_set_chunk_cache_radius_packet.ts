@@ -14,16 +14,17 @@ export class ClientboundSetChunkCacheRadiusPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetChunkCacheRadiusPacket.direction;
 
 	constructor(
-		// todo
+		public radius: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.radius);
 	}
 
 	static read(reader: PacketReader): ClientboundSetChunkCacheRadiusPacket {
-		// todo
+		const radius = reader.readVarInt();
+		return new ClientboundSetChunkCacheRadiusPacket(radius);
 	}
 }

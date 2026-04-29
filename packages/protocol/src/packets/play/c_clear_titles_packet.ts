@@ -14,16 +14,17 @@ export class ClientboundClearTitlesPacket extends DripleafPacket {
 	override readonly direction = ClientboundClearTitlesPacket.direction;
 
 	constructor(
-		// todo
+		public reset: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeBoolean(this.reset);
 	}
 
 	static read(reader: PacketReader): ClientboundClearTitlesPacket {
-		// todo
+		const reset = reader.readBoolean();
+		return new ClientboundClearTitlesPacket(reset);
 	}
 }

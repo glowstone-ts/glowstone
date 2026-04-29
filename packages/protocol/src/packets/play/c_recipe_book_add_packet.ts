@@ -14,7 +14,7 @@ export class ClientboundRecipeBookAddPacket extends DripleafPacket {
 	override readonly direction = ClientboundRecipeBookAddPacket.direction;
 
 	constructor(
-		// todo
+		// todo: wait on recipe display entries
 	) {
 		super();
 	}

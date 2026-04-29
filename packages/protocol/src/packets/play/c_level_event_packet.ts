@@ -2,7 +2,7 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
 
 export class ClientboundLevelEventPacket extends DripleafPacket {
 	static readonly id = 0x2e;
@@ -14,16 +14,26 @@ export class ClientboundLevelEventPacket extends DripleafPacket {
 	override readonly direction = ClientboundLevelEventPacket.direction;
 
 	constructor(
-		// todo
+		public eventType: number,
+		public location: Position,
+		public eventData: number,
+		public isGlobal: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeInt(this.eventType);
+		writer.writePosition(this.location);
+		writer.writeInt(this.eventData);
+		writer.writeBoolean(this.isGlobal);
 	}
 
 	static read(reader: PacketReader): ClientboundLevelEventPacket {
-		// todo
+		const eventType = reader.readInt();
+		const location = reader.readPosition();
+		const eventData = reader.readInt();
+		const isGlobal = reader.readBoolean();
+		return new ClientboundLevelEventPacket(eventType, location, eventData, isGlobal);
 	}
 }

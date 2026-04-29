@@ -4,6 +4,23 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+enum GameEvent {
+	InvalidBed = 0,
+	StartRaining = 1,
+	StopRaining = 2,
+	ChangeGameMode = 3,
+	WinGame = 4,
+	DemoteToSpectator = 5,
+	ArrowHitPlayer = 6,
+	RainLevelChange = 7,
+	ThunderLevelChange = 8,
+	PufferfishSting = 9,
+	ElderGuardianMobAppearance = 10,
+	EnableRespawnScreen = 11,
+	LimitedCrafting = 12,
+	WaitForLevelChunks = 13,
+}
+
 export class ClientboundGameEventPacket extends DripleafPacket {
 	static readonly id = 0x26;
 	static readonly state = State.Play;
@@ -14,16 +31,20 @@ export class ClientboundGameEventPacket extends DripleafPacket {
 	override readonly direction = ClientboundGameEventPacket.direction;
 
 	constructor(
-		// todo
+		public event: GameEvent,
+		public value: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeUnsignedByte(this.event);
+		writer.writeFloat(this.value);
 	}
 
 	static read(reader: PacketReader): ClientboundGameEventPacket {
-		// todo
+		const event = reader.readUnsignedByte();
+		const value = reader.readFloat();
+		return new ClientboundGameEventPacket(event, value);
 	}
 }

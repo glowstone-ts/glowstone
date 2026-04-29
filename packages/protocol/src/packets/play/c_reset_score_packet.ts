@@ -14,16 +14,20 @@ export class ClientboundResetScorePacket extends DripleafPacket {
 	override readonly direction = ClientboundResetScorePacket.direction;
 
 	constructor(
-		// todo
+		public owner: string,
+		public objectiveName: string | null
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeString(this.owner);
+		writer.writePrefixedOptional(this.objectiveName, (objectiveName) => writer.writeString(objectiveName));
 	}
 
 	static read(reader: PacketReader): ClientboundResetScorePacket {
-		// todo
+		const owner = reader.readString();
+		const objectiveName = reader.readPrefixedOptional(() => reader.readString());
+		return new ClientboundResetScorePacket(owner, objectiveName);
 	}
 }

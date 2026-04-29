@@ -14,16 +14,23 @@ export class ClientboundContainerSetDataPacket extends DripleafPacket {
 	override readonly direction = ClientboundContainerSetDataPacket.direction;
 
 	constructor(
-		// todo
+		public windowId: number,
+		public property: number,
+		public value: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.windowId);
+		writer.writeShort(this.property);
+		writer.writeShort(this.value);
 	}
 
 	static read(reader: PacketReader): ClientboundContainerSetDataPacket {
-		// todo
+		const windowId = reader.readVarInt();
+		const property = reader.readShort();
+		const value = reader.readShort();
+		return new ClientboundContainerSetDataPacket(windowId, property, value);
 	}
 }

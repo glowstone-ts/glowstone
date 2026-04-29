@@ -2,7 +2,7 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
 
 export class ClientboundDebugBlockValuePacket extends DripleafPacket {
 	static readonly id = 0x1a;
@@ -14,7 +14,8 @@ export class ClientboundDebugBlockValuePacket extends DripleafPacket {
 	override readonly direction = ClientboundDebugBlockValuePacket.direction;
 
 	constructor(
-		// todo
+		public location: Position,
+		public update: any // todo
 	) {
 		super();
 	}

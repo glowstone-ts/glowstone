@@ -13,17 +13,16 @@ export class ClientboundPlayerCombatEnterPacket extends DripleafPacket {
 	override readonly state = ClientboundPlayerCombatEnterPacket.state;
 	override readonly direction = ClientboundPlayerCombatEnterPacket.direction;
 
-	constructor(
-		// todo
-	) {
+	constructor() {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		void writer;
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerCombatEnterPacket {
-		// todo
+		void reader;
+		return new ClientboundPlayerCombatEnterPacket();
 	}
 }

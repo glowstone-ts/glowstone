@@ -14,7 +14,8 @@ export class ClientboundPlaceGhostRecipePacket extends DripleafPacket {
 	override readonly direction = ClientboundPlaceGhostRecipePacket.direction;
 
 	constructor(
-		// todo
+		public containerId: number,
+		public recipeDisplay: any // todo
 	) {
 		super();
 	}

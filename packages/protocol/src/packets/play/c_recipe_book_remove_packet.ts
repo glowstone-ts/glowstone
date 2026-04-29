@@ -14,16 +14,17 @@ export class ClientboundRecipeBookRemovePacket extends DripleafPacket {
 	override readonly direction = ClientboundRecipeBookRemovePacket.direction;
 
 	constructor(
-		// todo
+		public recipes: number[]
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeArray(this.recipes, (recipe) => writer.writeVarInt(recipe));
 	}
 
 	static read(reader: PacketReader): ClientboundRecipeBookRemovePacket {
-		// todo
+		const recipes = reader.readArray(() => reader.readVarInt());
+		return new ClientboundRecipeBookRemovePacket(recipes);
 	}
 }

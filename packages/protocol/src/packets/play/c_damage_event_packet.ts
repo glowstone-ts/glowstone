@@ -2,7 +2,7 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
 
 export class ClientboundDamageEventPacket extends DripleafPacket {
 	static readonly id = 0x19;
@@ -14,16 +14,33 @@ export class ClientboundDamageEventPacket extends DripleafPacket {
 	override readonly direction = ClientboundDamageEventPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public sourceTypeId: number,
+		public sourceCauseId: number,
+		public sourceDirectId: number,
+		public sourcePosition: Position | null,
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writeVarInt(this.sourceTypeId);
+		writer.writeVarInt(this.sourceCauseId);
+		writer.writeVarInt(this.sourceDirectId);
+		writer.writePrefixedOptional(this.sourcePosition, (pos) => {
+			writer.writePosition(pos);
+		});
 	}
 
 	static read(reader: PacketReader): ClientboundDamageEventPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const sourceTypeId = reader.readVarInt();
+		const sourceCauseId = reader.readVarInt();
+		const sourceDirectId = reader.readVarInt();
+		const sourcePosition = reader.readPrefixedOptional(() => {
+			return reader.readPosition();
+		});
+		return new ClientboundDamageEventPacket(entityId, sourceTypeId, sourceCauseId, sourceDirectId, sourcePosition);
 	}
 }

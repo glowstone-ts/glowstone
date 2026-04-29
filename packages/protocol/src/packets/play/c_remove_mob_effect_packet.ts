@@ -14,16 +14,20 @@ export class ClientboundRemoveMobEffectPacket extends DripleafPacket {
 	override readonly direction = ClientboundRemoveMobEffectPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public effectId: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writeVarInt(this.effectId);
 	}
 
 	static read(reader: PacketReader): ClientboundRemoveMobEffectPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const effectId = reader.readVarInt();
+		return new ClientboundRemoveMobEffectPacket(entityId, effectId);
 	}
 }

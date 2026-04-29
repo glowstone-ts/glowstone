@@ -3,6 +3,69 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
+
+export enum BossEventAction {
+	Add = 0,
+	Remove = 1,
+	UpdateHealth = 2,
+	UpdateTitle = 3,
+	UpdateStyle = 4,
+	UpdateFlags = 5
+}
+
+export enum BossBarColor {
+	Pink = 0,
+	Blue = 1,
+	Red = 2,
+	Green = 3,
+	Yellow = 4,
+	Purple = 5,
+	White = 6
+}
+
+export enum BossBarDividers {
+	Progress = 0,
+	Notched6 = 1,
+	Notched10 = 2,
+	Notched12 = 3,
+	Notched20 = 4
+}
+
+export type BossEventAddOperation = {
+	title: UnnamedNbtTag;
+	health: number;
+	color: BossBarColor;
+	dividers: BossBarDividers;
+	flags: number;
+}
+
+export type BossEventRemoveOperation = Record<string, never>;
+
+export type BossEventUpdateHealthOperation = {
+	health: number;
+}
+
+export type BossEventUpdateTitleOperation = {
+	title: UnnamedNbtTag;
+}
+
+export type BossEventUpdateStyleOperation = {
+	color: BossBarColor;
+	dividers: BossBarDividers;
+}
+
+export type BossEventUpdateFlagsOperation = {
+	flags: number;
+}
+
+export type BossEventOperation =
+	| BossEventAddOperation
+	| BossEventRemoveOperation
+	| BossEventUpdateHealthOperation
+	| BossEventUpdateTitleOperation
+	| BossEventUpdateStyleOperation
+	| BossEventUpdateFlagsOperation;
 
 export class ClientboundBossEventPacket extends DripleafPacket {
 	static readonly id = 0x09;
@@ -14,16 +77,85 @@ export class ClientboundBossEventPacket extends DripleafPacket {
 	override readonly direction = ClientboundBossEventPacket.direction;
 
 	constructor(
-		// todo
+		public uuid: string,
+		public action: BossEventAction,
+		public operation: BossEventOperation
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeUUID(this.uuid);
+		writer.writeVarInt(this.action);
+		switch (this.action) {
+			case BossEventAction.Add: {
+				const value = this.operation as BossEventAddOperation;
+				writer.writeNbt(value.title);
+				writer.writeFloat(value.health);
+				writer.writeVarInt(value.color);
+				writer.writeVarInt(value.dividers);
+				writer.writeUnsignedByte(value.flags);
+				return;
+			}
+			case BossEventAction.Remove:
+				return;
+			case BossEventAction.UpdateHealth:
+				writer.writeFloat((this.operation as BossEventUpdateHealthOperation).health);
+				return;
+			case BossEventAction.UpdateTitle:
+				writer.writeNbt((this.operation as BossEventUpdateTitleOperation).title);
+				return;
+			case BossEventAction.UpdateStyle: {
+				const value = this.operation as BossEventUpdateStyleOperation;
+				writer.writeVarInt(value.color);
+				writer.writeVarInt(value.dividers);
+				return;
+			}
+			case BossEventAction.UpdateFlags:
+				writer.writeUnsignedByte((this.operation as BossEventUpdateFlagsOperation).flags);
+				return;
+			default:
+				throw new Error(`Unknown boss event action: ${this.action}`);
+		}
 	}
 
 	static read(reader: PacketReader): ClientboundBossEventPacket {
-		// todo
+		const uuid = reader.readUUID();
+		const action = reader.readVarInt() as BossEventAction;
+		let operation: BossEventOperation;
+
+		switch (action) {
+			case BossEventAction.Add:
+				operation = {
+					title: reader.readNbt(),
+					health: reader.readFloat(),
+					color: reader.readVarInt() as BossBarColor,
+					dividers: reader.readVarInt() as BossBarDividers,
+					flags: reader.readUnsignedByte()
+				};
+				break;
+			case BossEventAction.Remove:
+				operation = {};
+				break;
+			case BossEventAction.UpdateHealth:
+				operation = { health: reader.readFloat() };
+				break;
+			case BossEventAction.UpdateTitle:
+				operation = { title: reader.readNbt() };
+				break;
+			case BossEventAction.UpdateStyle:
+				operation = {
+					color: reader.readVarInt() as BossBarColor,
+					dividers: reader.readVarInt() as BossBarDividers
+				};
+				break;
+			case BossEventAction.UpdateFlags:
+				operation = { flags: reader.readUnsignedByte() };
+				break;
+			default:
+				throw new Error(`Unknown boss event action: ${action}`);
+		}
+
+		return new ClientboundBossEventPacket(uuid, action, operation);
 	}
 }

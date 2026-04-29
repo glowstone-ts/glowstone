@@ -14,16 +14,26 @@ export class ClientboundMoveEntityRotPacket extends DripleafPacket {
 	override readonly direction = ClientboundMoveEntityRotPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public yaw: number,
+		public pitch: number,
+		public onGround: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writeByte(this.yaw);
+		writer.writeByte(this.pitch);
+		writer.writeBoolean(this.onGround);
 	}
 
 	static read(reader: PacketReader): ClientboundMoveEntityRotPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const yaw = reader.readByte();
+		const pitch = reader.readByte();
+		const onGround = reader.readBoolean();
+		return new ClientboundMoveEntityRotPacket(entityId, yaw, pitch, onGround);
 	}
 }

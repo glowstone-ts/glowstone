@@ -2,7 +2,7 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State } from '../../types';
+import { Direction, State, type Position } from '../../types';
 
 export class ClientboundSetEntityMotionPacket extends DripleafPacket {
 	static readonly id = 0x65;
@@ -14,16 +14,20 @@ export class ClientboundSetEntityMotionPacket extends DripleafPacket {
 	override readonly direction = ClientboundSetEntityMotionPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public movement: Position // todo: should be a vec3
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writePosition(this.movement);
 	}
 
 	static read(reader: PacketReader): ClientboundSetEntityMotionPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const movement = reader.readPosition();
+		return new ClientboundSetEntityMotionPacket(entityId, movement);
 	}
 }

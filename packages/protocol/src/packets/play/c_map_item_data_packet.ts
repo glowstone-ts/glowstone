@@ -3,6 +3,61 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
+
+enum IconType {
+	WhiteArrow = 0,
+	GreenArrow = 1,
+	RedArrow = 2,
+	BlueArrow = 3,
+	WhiteCross = 4,
+	RedPointer = 5,
+	WhiteCircle = 6,
+	SmallWhiteCircle = 7,
+	Mansion = 8,
+	Monument = 9,
+	WhiteBanner = 10,
+	OrangeBanner = 11,
+	MagentaBanner = 12,
+	LightBlueBanner = 13,
+	YellowBanner = 14,
+	LimeBanner = 15,
+	PinkBanner = 16,
+	GrayBanner = 17,
+	LightGrayBanner = 18,
+	CyanBanner = 19,
+	PurpleBanner = 20,
+	BlueBanner = 21,
+	BrownBanner = 22,
+	GreenBanner = 23,
+	RedBanner = 24,
+	BlackBanner = 25,
+	TreasureMarker = 26,
+	DesertVillage = 27,
+	PlainsVillage = 28,
+	SavannaVillage = 29,
+	SnowyVillage = 30,
+	TaigaVillage = 31,
+	JungleTemple = 32,
+	SwampHut = 33,
+	TrailChambers = 34
+}
+
+type IconEntry = {
+	type: IconType,
+	x: number,
+	z: number,
+	direction: number, // todo: enum
+	displayName: UnnamedNbtTag | null
+}
+
+type MapPatch = {
+	startX: number,
+	startZ: number,
+	width: number,
+	height: number,
+	data: Uint8Array
+}
 
 export class ClientboundMapItemDataPacket extends DripleafPacket {
 	static readonly id = 0x33;
@@ -14,16 +69,61 @@ export class ClientboundMapItemDataPacket extends DripleafPacket {
 	override readonly direction = ClientboundMapItemDataPacket.direction;
 
 	constructor(
-		// todo
+		public mapId: number,
+		public scale: number,
+		public locked: boolean,
+		public icons: IconEntry[] | null,
+		public colorPatch: MapPatch | null
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeInt(this.mapId);
+		writer.writeByte(this.scale);
+		writer.writeBoolean(this.locked);
+		writer.writePrefixedOptional(this.icons, (icons) => {
+			writer.writeArray(icons, (icon) => {
+				writer.writeByte(icon.type);
+				writer.writeByte(icon.x);
+				writer.writeByte(icon.z);
+				writer.writeByte(icon.direction, 15);
+				writer.writePrefixedOptional(icon.displayName, (displayName) => {
+					writer.writeNbt(displayName);
+				});
+			});
+		});
+		writer.writePrefixedOptional(this.colorPatch, (colorPatch) => {
+			writer.writeByte(colorPatch.startX);
+			writer.writeByte(colorPatch.startZ);
+			writer.writeByte(colorPatch.width);
+			writer.writeByte(colorPatch.height);
+			writer.writeBytes(colorPatch.data);
+		});
 	}
 
 	static read(reader: PacketReader): ClientboundMapItemDataPacket {
-		// todo
+		const mapId = reader.readInt();
+		const scale = reader.readByte();
+		const locked = reader.readBoolean();
+		const icons = reader.readPrefixedOptional(() => {
+			return reader.readArray(() => {
+				const type = reader.readByte();
+				const x = reader.readByte();
+				const z = reader.readByte();
+				const direction = reader.readByte();
+				const displayName = reader.readPrefixedOptional(() => reader.readNbt());
+				return { type, x, z, direction, displayName };
+			});
+		});
+		const colorPatch = reader.readPrefixedOptional(() => {
+			const startX = reader.readByte();
+			const startZ = reader.readByte();
+			const width = reader.readByte();
+			const height = reader.readByte();
+			const data = reader.readBytes(width * height);
+			return { startX, startZ, width, height, data };
+		});
+		return new ClientboundMapItemDataPacket(mapId, scale, locked, icons, colorPatch);
 	}
 }

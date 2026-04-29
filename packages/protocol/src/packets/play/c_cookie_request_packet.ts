@@ -14,16 +14,17 @@ export class ClientboundCookieRequestPacket extends DripleafPacket {
 	override readonly direction = ClientboundCookieRequestPacket.direction;
 
 	constructor(
-		// todo
+		public key: string
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeString(this.key);
 	}
 
 	static read(reader: PacketReader): ClientboundCookieRequestPacket {
-		// todo
+		const key = reader.readString();
+		return new ClientboundCookieRequestPacket(key);
 	}
 }

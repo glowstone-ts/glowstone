@@ -13,17 +13,16 @@ export class ClientboundChunkBatchStartPacket extends DripleafPacket {
 	override readonly state = ClientboundChunkBatchStartPacket.state;
 	override readonly direction = ClientboundChunkBatchStartPacket.direction;
 
-	constructor(
-		// todo
-	) {
+	constructor() {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		void writer;
 	}
 
 	static read(reader: PacketReader): ClientboundChunkBatchStartPacket {
-		// todo
+		void reader;
+		return new ClientboundChunkBatchStartPacket();
 	}
 }

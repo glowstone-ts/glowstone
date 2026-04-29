@@ -4,6 +4,18 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+type Node = {
+	flags: number;
+	childrenCount: number;
+	children: number[];
+
+	redirectNode?: number | null; // flags & 0x08
+	name?: string | null; // argument and literal nodes
+	parserId?: number | null; // argument nodes
+	properties?: unknown; // argument nodes, depends on parser
+	suggestionType?: string | null; // flags & 0x10
+}
+
 export class ClientboundCommandsPacket extends DripleafPacket {
 	static readonly id = 0x10;
 	static readonly state = State.Play;
@@ -14,7 +26,8 @@ export class ClientboundCommandsPacket extends DripleafPacket {
 	override readonly direction = ClientboundCommandsPacket.direction;
 
 	constructor(
-		// todo
+		public nodes: Node[],
+		public rootIndex: number
 	) {
 		super();
 	}

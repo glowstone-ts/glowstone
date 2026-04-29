@@ -4,6 +4,20 @@ import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
 
+type SoundEvent = {
+	soundName: string,
+	hasFixedRange: boolean,
+	fixedRange?: number,
+};
+
+type BlockParticleAlternativeEntry = {
+	particleId: number,
+	particleData: any, // todo
+	scaling: number,
+	speed: number,
+	weight: number,
+}
+
 export class ClientboundExplodePacket extends DripleafPacket {
 	static readonly id = 0x24;
 	static readonly state = State.Play;
@@ -14,7 +28,16 @@ export class ClientboundExplodePacket extends DripleafPacket {
 	override readonly direction = ClientboundExplodePacket.direction;
 
 	constructor(
-		// todo
+		public x: number,
+		public y: number,
+		public z: number,
+		public radius: number,
+		public blockCount: number,
+		public playerDeltaVelocity: { x: number, y: number, z: number } | null,
+		public explosionParticleId: number,
+		public explosionParticleData: any, // todo
+		public explosionSound: SoundEvent | number,
+		public blockParticleAlternatives: BlockParticleAlternativeEntry[]
 	) {
 		super();
 	}

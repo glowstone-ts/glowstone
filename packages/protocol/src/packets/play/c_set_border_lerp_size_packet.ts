@@ -14,16 +14,23 @@ export class ClientboundSetBorderLerpSizePacket extends DripleafPacket {
 	override readonly direction = ClientboundSetBorderLerpSizePacket.direction;
 
 	constructor(
-		// todo
+		public oldSize: number,
+		public newSize: number,
+		public lerpTime: bigint
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeDouble(this.oldSize);
+		writer.writeDouble(this.newSize);
+		writer.writeVarLong(this.lerpTime);
 	}
 
 	static read(reader: PacketReader): ClientboundSetBorderLerpSizePacket {
-		// todo
+		const oldSize = reader.readDouble();
+		const newSize = reader.readDouble();
+		const lerpTime = reader.readVarLong();
+		return new ClientboundSetBorderLerpSizePacket(oldSize, newSize, lerpTime);
 	}
 }

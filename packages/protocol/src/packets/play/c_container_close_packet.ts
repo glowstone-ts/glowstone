@@ -14,16 +14,17 @@ export class ClientboundContainerClosePacket extends DripleafPacket {
 	override readonly direction = ClientboundContainerClosePacket.direction;
 
 	constructor(
-		// todo
+		public windowId: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.windowId);
 	}
 
 	static read(reader: PacketReader): ClientboundContainerClosePacket {
-		// todo
+		const windowId = reader.readVarInt();
+		return new ClientboundContainerClosePacket(windowId);
 	}
 }

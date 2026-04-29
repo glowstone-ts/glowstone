@@ -14,16 +14,44 @@ export class ClientboundEntityPositionSyncPacket extends DripleafPacket {
 	override readonly direction = ClientboundEntityPositionSyncPacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public x: number,
+		public y: number,
+		public z: number,
+		public velocityX: number,
+		public velocityY: number,
+		public velocityZ: number,
+		public yaw: number,
+		public pitch: number,
+		public onGround: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writeDouble(this.x);
+		writer.writeDouble(this.y);
+		writer.writeDouble(this.z);
+		writer.writeDouble(this.velocityX);
+		writer.writeDouble(this.velocityY);
+		writer.writeDouble(this.velocityZ);
+		writer.writeFloat(this.yaw);
+		writer.writeFloat(this.pitch);
+		writer.writeBoolean(this.onGround);
 	}
 
 	static read(reader: PacketReader): ClientboundEntityPositionSyncPacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const x = reader.readDouble();
+		const y = reader.readDouble();
+		const z = reader.readDouble();
+		const velocityX = reader.readDouble();
+		const velocityY = reader.readDouble();
+		const velocityZ = reader.readDouble();
+		const yaw = reader.readFloat();
+		const pitch = reader.readFloat();
+		const onGround = reader.readBoolean();
+		return new ClientboundEntityPositionSyncPacket(entityId, x, y, z, velocityX, velocityY, velocityZ, yaw, pitch, onGround);
 	}
 }

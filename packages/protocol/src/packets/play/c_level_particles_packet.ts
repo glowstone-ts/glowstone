@@ -14,16 +14,47 @@ export class ClientboundLevelParticlesPacket extends DripleafPacket {
 	override readonly direction = ClientboundLevelParticlesPacket.direction;
 
 	constructor(
-		// todo
+		public longDistance: boolean,
+		public alwaysShow: boolean,
+		public x: number,
+		public y: number,
+		public z: number,
+		public offsetX: number,
+		public offsetY: number,
+		public offsetZ: number,
+		public maxSpeed: number,
+		public count: number,
+		public particleId: number, // todo: link with registry key instead of numeric id
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeBoolean(this.longDistance);
+		writer.writeBoolean(this.alwaysShow);
+		writer.writeDouble(this.x);
+		writer.writeDouble(this.y);
+		writer.writeDouble(this.z);
+		writer.writeFloat(this.offsetX);
+		writer.writeFloat(this.offsetY);
+		writer.writeFloat(this.offsetZ);
+		writer.writeFloat(this.maxSpeed);
+		writer.writeInt(this.count);
+		writer.writeVarInt(this.particleId);
 	}
 
 	static read(reader: PacketReader): ClientboundLevelParticlesPacket {
-		// todo
+		const longDistance = reader.readBoolean();
+		const alwaysShow = reader.readBoolean();
+		const x = reader.readDouble();
+		const y = reader.readDouble();
+		const z = reader.readDouble();
+		const offsetX = reader.readFloat();
+		const offsetY = reader.readFloat();
+		const offsetZ = reader.readFloat();
+		const maxSpeed = reader.readFloat();
+		const count = reader.readInt();
+		const particleId = reader.readVarInt();
+		return new ClientboundLevelParticlesPacket(longDistance, alwaysShow, x, y, z, offsetX, offsetY, offsetZ, maxSpeed, count, particleId);
 	}
 }

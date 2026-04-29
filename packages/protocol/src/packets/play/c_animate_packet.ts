@@ -14,16 +14,20 @@ export class ClientboundAnimatePacket extends DripleafPacket {
 	override readonly direction = ClientboundAnimatePacket.direction;
 
 	constructor(
-		// todo
+		public entityId: number,
+		public animation: number
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.entityId);
+		writer.writeUnsignedByte(this.animation);
 	}
 
 	static read(reader: PacketReader): ClientboundAnimatePacket {
-		// todo
+		const entityId = reader.readVarInt();
+		const animation = reader.readUnsignedByte();
+		return new ClientboundAnimatePacket(entityId, animation);
 	}
 }

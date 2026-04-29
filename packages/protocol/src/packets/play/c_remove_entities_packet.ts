@@ -14,16 +14,17 @@ export class ClientboundRemoveEntitiesPacket extends DripleafPacket {
 	override readonly direction = ClientboundRemoveEntitiesPacket.direction;
 
 	constructor(
-		// todo
+		public entityIds: number[]
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeArray(this.entityIds, (entityId) => writer.writeVarInt(entityId));
 	}
 
 	static read(reader: PacketReader): ClientboundRemoveEntitiesPacket {
-		// todo
+		const entityIds = reader.readArray(() => reader.readVarInt());
+		return new ClientboundRemoveEntitiesPacket(entityIds);
 	}
 }

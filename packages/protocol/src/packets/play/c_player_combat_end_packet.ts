@@ -14,16 +14,17 @@ export class ClientboundPlayerCombatEndPacket extends DripleafPacket {
 	override readonly direction = ClientboundPlayerCombatEndPacket.direction;
 
 	constructor(
-		// todo
+		public duration: number,
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeVarInt(this.duration);
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerCombatEndPacket {
-		// todo
+		const duration = reader.readVarInt();
+		return new ClientboundPlayerCombatEndPacket(duration);
 	}
 }
