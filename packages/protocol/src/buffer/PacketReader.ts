@@ -1,4 +1,6 @@
 import { NbtReader, NbtTagType, type NbtTag } from "@dripleaf/nbt";
+import type { LpVec3, Position } from "../types";
+import { readLpVec3 as readLpVec3Value } from "./lpvec3";
 import { decodeVarInt, decodeVarLong } from "./varint";
 
 const IDENTIFIER_PATTERN = /^[0-9a-z._-]+:[0-9a-z._\-\/]+$/;
@@ -119,7 +121,7 @@ export class PacketReader {
     return value;
   }
 
-  readPosition() {
+  readPosition(): Position {
     const value = this.readLong();
 
     let x = Number(value >> 38n);
@@ -138,6 +140,12 @@ export class PacketReader {
 
   readAngle(): number {
     return this.readUnsignedByte() * 360 / 256;
+  }
+
+  readLpVec3(): LpVec3 {
+    const [value, offset] = readLpVec3Value(this.bytes, this.offset);
+    this.offset = offset;
+    return value;
   }
 
   readBitSet(): bigint[] {

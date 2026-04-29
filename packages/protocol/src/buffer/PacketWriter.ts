@@ -1,4 +1,6 @@
 import { NbtWriter, type NbtTag } from "@dripleaf/nbt";
+import type { LpVec3, Position } from "../types";
+import { writeLpVec3 as writeLpVec3Value } from "./lpvec3";
 import { writeVarInt, writeVarLong } from "./varint";
 
 const INT_MIN = -2147483648;
@@ -114,7 +116,8 @@ export class PacketWriter {
       this.writeUnsignedByte(Number((number >> shift) & 0xffn));
   }
 
-  writePosition(x: number, y: number, z: number) {
+  writePosition(pos: Position) {
+    const { x, y, z } = pos;
     this.range("Position.x", x, -33554432, 33554431);
     this.range("Position.y", y, -2048, 2047);
     this.range("Position.z", z, -33554432, 33554431);
@@ -134,6 +137,10 @@ export class PacketWriter {
     let normalized = degrees % 360;
     if (normalized < 0) normalized += 360;
     this.writeUnsignedByte(Math.floor(normalized * 256 / 360));
+  }
+
+  writeLpVec3(value: LpVec3) {
+    writeLpVec3Value(value, byte => this.writeUnsignedByte(byte), encoded => this.writeVarInt(encoded));
   }
 
   writeBitSet(bits: bigint[]) {
