@@ -2,7 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
+import { Direction, State } from '../../types';
+import type { Vec3 } from 'vec3';
 
 export class ClientboundLevelEventPacket extends DripleafPacket {
 	static readonly id = 0x2e;
@@ -14,26 +15,26 @@ export class ClientboundLevelEventPacket extends DripleafPacket {
 	override readonly direction = ClientboundLevelEventPacket.direction;
 
 	constructor(
-		public eventType: number,
-		public location: Position,
-		public eventData: number,
-		public isGlobal: boolean
+		public type: number,
+		public position: Vec3,
+		public data: number,
+		public globalEvent: boolean
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		writer.writeInt(this.eventType);
-		writer.writePosition(this.location);
-		writer.writeInt(this.eventData);
-		writer.writeBoolean(this.isGlobal);
+		writer.writeInt(this.type);
+		writer.writeBlockPos(this.position);
+		writer.writeInt(this.data);
+		writer.writeBoolean(this.globalEvent);
 	}
 
 	static read(reader: PacketReader): ClientboundLevelEventPacket {
-		const eventType = reader.readInt();
-		const location = reader.readPosition();
-		const eventData = reader.readInt();
-		const isGlobal = reader.readBoolean();
-		return new ClientboundLevelEventPacket(eventType, location, eventData, isGlobal);
+		const type = reader.readInt();
+		const position = reader.readBlockPos();
+		const data = reader.readInt();
+		const globalEvent = reader.readBoolean();
+		return new ClientboundLevelEventPacket(type, position, data, globalEvent);
 	}
 }

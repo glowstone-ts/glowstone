@@ -2,7 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
+import { Direction, State } from '../../types';
+import { Vec3 } from 'vec3';
 
 export class ClientboundDamageEventPacket extends DripleafPacket {
 	static readonly id = 0x19;
@@ -18,7 +19,7 @@ export class ClientboundDamageEventPacket extends DripleafPacket {
 		public sourceTypeId: number,
 		public sourceCauseId: number,
 		public sourceDirectId: number,
-		public sourcePosition: Position | null,
+		public sourcePosition: Vec3 | null,
 	) {
 		super();
 	}
@@ -29,7 +30,7 @@ export class ClientboundDamageEventPacket extends DripleafPacket {
 		writer.writeVarInt(this.sourceCauseId);
 		writer.writeVarInt(this.sourceDirectId);
 		writer.writePrefixedOptional(this.sourcePosition, (pos) => {
-			writer.writePosition(pos);
+			writer.writeVec3d(pos);
 		});
 	}
 
@@ -39,7 +40,7 @@ export class ClientboundDamageEventPacket extends DripleafPacket {
 		const sourceCauseId = reader.readVarInt();
 		const sourceDirectId = reader.readVarInt();
 		const sourcePosition = reader.readPrefixedOptional(() => {
-			return reader.readPosition();
+			return reader.readVec3d();
 		});
 		return new ClientboundDamageEventPacket(entityId, sourceTypeId, sourceCauseId, sourceDirectId, sourcePosition);
 	}

@@ -2,7 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
+import { Direction, State } from '../../types';
+import type { Vec3 } from 'vec3';
 
 export class ClientboundMoveVehiclePacket extends DripleafPacket {
 	static readonly id = 0x39;
@@ -14,7 +15,7 @@ export class ClientboundMoveVehiclePacket extends DripleafPacket {
 	override readonly direction = ClientboundMoveVehiclePacket.direction;
 
 	constructor(
-		public position: Position,
+		public position: Vec3,
 		public yaw: number,
 		public pitch: number,
 	) {
@@ -22,13 +23,13 @@ export class ClientboundMoveVehiclePacket extends DripleafPacket {
 	}
 
 	write(writer: PacketWriter) {
-		writer.writePosition(this.position);
+		writer.writeVec3d(this.position);
 		writer.writeFloat(this.yaw);
 		writer.writeFloat(this.pitch);
 	}
 
 	static read(reader: PacketReader): ClientboundMoveVehiclePacket {
-		const position = reader.readPosition();
+		const position = reader.readVec3d();
 		const yaw = reader.readFloat();
 		const pitch = reader.readFloat();
 		return new ClientboundMoveVehiclePacket(position, yaw, pitch);

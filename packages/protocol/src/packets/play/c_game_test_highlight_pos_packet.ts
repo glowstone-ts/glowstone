@@ -2,7 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
+import { Direction, State } from '../../types';
+import type { Vec3 } from 'vec3';
 
 export class ClientboundGameTestHighlightPosPacket extends DripleafPacket {
 	static readonly id = 0x28;
@@ -14,20 +15,20 @@ export class ClientboundGameTestHighlightPosPacket extends DripleafPacket {
 	override readonly direction = ClientboundGameTestHighlightPosPacket.direction;
 
 	constructor(
-		public absolutePosition: Position,
-		public relativePosition: Position
+		public absolutePosition: Vec3,
+		public relativePosition: Vec3
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		writer.writePosition(this.absolutePosition);
-		writer.writePosition(this.relativePosition);
+		writer.writeBlockPos(this.absolutePosition);
+		writer.writeBlockPos(this.relativePosition);
 	}
 
 	static read(reader: PacketReader): ClientboundGameTestHighlightPosPacket {
-		const absolutePosition = reader.readPosition();
-		const relativePosition = reader.readPosition();
+		const absolutePosition = reader.readBlockPos();
+		const relativePosition = reader.readBlockPos();
 		return new ClientboundGameTestHighlightPosPacket(absolutePosition, relativePosition);
 	}
 }

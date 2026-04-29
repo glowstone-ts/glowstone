@@ -3,6 +3,8 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import type { Vec3 } from 'vec3';
+import { PositionMoveRotation } from '../../datatypes/PositionMoveRotation';
 
 export class ClientboundEntityPositionSyncPacket extends DripleafPacket {
 	static readonly id = 0x23;
@@ -15,14 +17,7 @@ export class ClientboundEntityPositionSyncPacket extends DripleafPacket {
 
 	constructor(
 		public entityId: number,
-		public x: number,
-		public y: number,
-		public z: number,
-		public velocityX: number,
-		public velocityY: number,
-		public velocityZ: number,
-		public yaw: number,
-		public pitch: number,
+		public values: PositionMoveRotation,
 		public onGround: boolean
 	) {
 		super();
@@ -30,28 +25,14 @@ export class ClientboundEntityPositionSyncPacket extends DripleafPacket {
 
 	write(writer: PacketWriter) {
 		writer.writeVarInt(this.entityId);
-		writer.writeDouble(this.x);
-		writer.writeDouble(this.y);
-		writer.writeDouble(this.z);
-		writer.writeDouble(this.velocityX);
-		writer.writeDouble(this.velocityY);
-		writer.writeDouble(this.velocityZ);
-		writer.writeFloat(this.yaw);
-		writer.writeFloat(this.pitch);
+		this.values.write(writer);
 		writer.writeBoolean(this.onGround);
 	}
 
 	static read(reader: PacketReader): ClientboundEntityPositionSyncPacket {
 		const entityId = reader.readVarInt();
-		const x = reader.readDouble();
-		const y = reader.readDouble();
-		const z = reader.readDouble();
-		const velocityX = reader.readDouble();
-		const velocityY = reader.readDouble();
-		const velocityZ = reader.readDouble();
-		const yaw = reader.readFloat();
-		const pitch = reader.readFloat();
+		const values = PositionMoveRotation.read(reader);
 		const onGround = reader.readBoolean();
-		return new ClientboundEntityPositionSyncPacket(entityId, x, y, z, velocityX, velocityY, velocityZ, yaw, pitch, onGround);
+		return new ClientboundEntityPositionSyncPacket(entityId, values, onGround);
 	}
 }

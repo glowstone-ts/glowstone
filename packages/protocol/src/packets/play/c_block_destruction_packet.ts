@@ -2,7 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
+import { Direction, State } from '../../types';
+import type { Vec3 } from 'vec3';
 
 export class ClientboundBlockDestructionPacket extends DripleafPacket {
 	static readonly id = 0x05;
@@ -15,7 +16,7 @@ export class ClientboundBlockDestructionPacket extends DripleafPacket {
 
 	constructor(
 		public entityId: number,
-		public location: Position,
+		public position: Vec3,
 		public progress: number
 	) {
 		super();
@@ -23,14 +24,14 @@ export class ClientboundBlockDestructionPacket extends DripleafPacket {
 
 	write(writer: PacketWriter) {
 		writer.writeVarInt(this.entityId);
-		writer.writePosition(this.location);
+		writer.writeBlockPos(this.position);
 		writer.writeUnsignedByte(this.progress);
 	}
 
 	static read(reader: PacketReader): ClientboundBlockDestructionPacket {
 		const entityId = reader.readVarInt();
-		const location = reader.readPosition();
+		const position = reader.readBlockPos();
 		const progress = reader.readUnsignedByte();
-		return new ClientboundBlockDestructionPacket(entityId, location, progress);
+		return new ClientboundBlockDestructionPacket(entityId, position, progress);
 	}
 }

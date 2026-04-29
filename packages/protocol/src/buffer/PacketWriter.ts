@@ -1,7 +1,7 @@
 import { NbtWriter, type NbtTag } from "@dripleaf/nbt";
-import type { LpVec3, Position } from "../types";
-import { writeLpVec3 as writeLpVec3Value } from "./lpvec3";
+import { writeLpVec3, writeLpVec3 as writeLpVec3Value } from "./lpvec3";
 import { writeVarInt, writeVarLong } from "./varint";
+import type { Vec3 } from "vec3";
 
 const INT_MIN = -2147483648;
 const INT_MAX = 2147483647;
@@ -116,11 +116,11 @@ export class PacketWriter {
       this.writeUnsignedByte(Number((number >> shift) & 0xffn));
   }
 
-  writePosition(pos: Position) {
+  writeBlockPos(pos: Vec3) {
     const { x, y, z } = pos;
-    this.range("Position.x", x, -33554432, 33554431);
-    this.range("Position.y", y, -2048, 2047);
-    this.range("Position.z", z, -33554432, 33554431);
+    this.range("Vec3.x", x, -33554432, 33554431);
+    this.range("Vec3.y", y, -2048, 2047);
+    this.range("Vec3.z", z, -33554432, 33554431);
 
     const packed =
       (BigInt(x & 0x3ffffff) << 38n) |
@@ -128,6 +128,12 @@ export class PacketWriter {
       BigInt(y & 0xfff);
 
     this.writeLong(packed);
+  }
+
+  writeVec3d(pos: Vec3) {
+    this.writeDouble(pos.x);
+    this.writeDouble(pos.y);
+    this.writeDouble(pos.z);
   }
 
   writeAngle(degrees: number) {
@@ -139,8 +145,8 @@ export class PacketWriter {
     this.writeUnsignedByte(Math.floor(normalized * 256 / 360));
   }
 
-  writeLpVec3(value: LpVec3) {
-    writeLpVec3Value(value, byte => this.writeUnsignedByte(byte), encoded => this.writeVarInt(encoded));
+  writeLpVec3(value: Vec3) {
+    writeLpVec3(value, byte => this.writeUnsignedByte(byte), encoded => this.writeVarInt(encoded));
   }
 
   writeBitSet(bits: bigint[]) {

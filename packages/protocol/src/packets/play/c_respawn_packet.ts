@@ -2,25 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
-
-type GlobalPosition = {
-	dimension: string;
-	position: Position;
-}
-
-type CommonPlayerSpawnInfo = {
-	dimensionType: number;
-	dimension: string;
-	seed: bigint;
-	gameType: number;
-	previousGameType: number | null;
-	isDebug: boolean;
-	isFlat: boolean;
-	lastDeathLocation: GlobalPosition | null;
-	portalCooldown: number;
-	seaLevel: number;
-}
+import { Direction, State } from '../../types';
+import { CommonPlayerSpawnInfo } from '../../datatypes/CommonPlayerSpawnInfo';
 
 enum DataToKeep {
 	KeepAttributeModifiers = 0x01,
@@ -45,51 +28,13 @@ export class ClientboundRespawnPacket extends DripleafPacket {
 	}
 
 	write(writer: PacketWriter) {
-		writer.writeInt(this.commonPlayerSpawnInfo.dimensionType);
-		writer.writeString(this.commonPlayerSpawnInfo.dimension);
-		writer.writeLong(this.commonPlayerSpawnInfo.seed);
-		writer.writeByte(this.commonPlayerSpawnInfo.gameType);
-		writer.writeByte(this.commonPlayerSpawnInfo.previousGameType !== null ? this.commonPlayerSpawnInfo.previousGameType : -1);
-		writer.writeBoolean(this.commonPlayerSpawnInfo.isDebug);
-		writer.writeBoolean(this.commonPlayerSpawnInfo.isFlat);
-		writer.writePrefixedOptional(this.commonPlayerSpawnInfo.lastDeathLocation, (lastDeathLocation) => {
-			writer.writeString(lastDeathLocation.dimension);
-			writer.writePosition(lastDeathLocation.position);
-		});
-		writer.writeVarInt(this.commonPlayerSpawnInfo.portalCooldown);
-		writer.writeVarInt(this.commonPlayerSpawnInfo.seaLevel);
+		this.commonPlayerSpawnInfo.write(writer);
 		writer.writeByte(this.dataToKeep);
 	}
 
 	static read(reader: PacketReader): ClientboundRespawnPacket {
-		const dimensionType = reader.readInt();
-		const dimension = reader.readString();
-		const seed = reader.readLong();
-		const gameType = reader.readByte();
-		const previousGameTypeByte = reader.readByte();
-		const previousGameType = previousGameTypeByte !== -1 ? previousGameTypeByte : null;
-		const isDebug = reader.readBoolean();
-		const isFlat = reader.readBoolean();
-		const lastDeathLocation = reader.readPrefixedOptional(() => {
-			const dimension = reader.readString();
-			const position = reader.readPosition();
-			return { dimension, position };
-		});
-		const portalCooldown = reader.readVarInt();
-		const seaLevel = reader.readVarInt();
-		const dataToKeepByte = reader.readByte();
-		const dataToKeep = dataToKeepByte as DataToKeep;
-		return new ClientboundRespawnPacket({
-			dimensionType,
-			dimension,
-			seed,
-			gameType,
-			previousGameType,
-			isDebug,
-			isFlat,
-			lastDeathLocation,
-			portalCooldown,
-			seaLevel
-		}, dataToKeep);
+		const commonPlayerSpawnInfo = CommonPlayerSpawnInfo.read(reader);
+		const dataToKeep = reader.readByte() as DataToKeep;
+		return new ClientboundRespawnPacket(commonPlayerSpawnInfo, dataToKeep);
 	}
 }

@@ -2,7 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
+import { Direction, State } from '../../types';
+import type { Vec3 } from 'vec3';
 
 export class ClientboundDebugBlockValuePacket extends DripleafPacket {
 	static readonly id = 0x1a;
@@ -14,17 +15,19 @@ export class ClientboundDebugBlockValuePacket extends DripleafPacket {
 	override readonly direction = ClientboundDebugBlockValuePacket.direction;
 
 	constructor(
-		public location: Position,
+		public location: Vec3,
 		public update: any // todo
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		// todo
+		writer.writeBlockPos(this.location);
+		throw new Error("todo");
 	}
 
 	static read(reader: PacketReader): ClientboundDebugBlockValuePacket {
-		// todo
+		const location = reader.readBlockPos();
+		throw new Error("todo");
 	}
 }

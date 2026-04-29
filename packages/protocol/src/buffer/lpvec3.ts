@@ -1,6 +1,6 @@
 // https://github.com/PrismarineJS/node-minecraft-protocol/blob/master/src/datatypes/lpVec3.js
 
-import type { LpVec3 } from "../types";
+import { Vec3 } from "vec3";
 import { decodeVarInt, writeVarInt } from "./varint";
 
 const DATA_BITS_MASK = 32767;
@@ -8,13 +8,13 @@ const MAX_QUANTIZED_VALUE = 32766;
 const ABS_MIN_VALUE = 3.051944088384301e-5;
 const ABS_MAX_VALUE = 1.7179869183e10;
 
-export function readLpVec3(bytes: Uint8Array, offset: number): [LpVec3, number] {
+export function readLpVec3(bytes: Uint8Array, offset: number): [Vec3, number] {
   const a = bytes[offset];
   if (a == null)
     throw new Error("Unexpected end of packet");
 
   if (a === 0)
-    return [{ x: 0, y: 0, z: 0 }, offset + 1];
+    return [new Vec3(0, 0, 0), offset + 1];
 
   const b = bytes[offset + 1];
   const c0 = bytes[offset + 2];
@@ -36,16 +36,16 @@ export function readLpVec3(bytes: Uint8Array, offset: number): [LpVec3, number] 
   }
 
   return [
-    {
-      x: unpack(packed, 3) * scale,
-      y: unpack(packed, 18) * scale,
-      z: unpack(packed, 33) * scale,
-    },
+    new Vec3(
+      unpack(packed, 3) * scale,
+      unpack(packed, 18) * scale,
+      unpack(packed, 33) * scale
+    ),
     nextOffset,
   ];
 }
 
-export function writeLpVec3(value: LpVec3, writeUnsignedByte: (value: number) => void, writeVarIntValue: (value: number) => void) {
+export function writeLpVec3(value: { x: number; y: number; z: number }, writeUnsignedByte: (value: number) => void, writeVarIntValue: (value: number) => void) {
   const x = sanitize(value.x);
   const y = sanitize(value.y);
   const z = sanitize(value.z);
@@ -78,7 +78,7 @@ export function writeLpVec3(value: LpVec3, writeUnsignedByte: (value: number) =>
     writeVarIntValue(Math.floor(scale / 4));
 }
 
-export function sizeOfLpVec3(value: LpVec3): number {
+export function sizeOfLpVec3(value: Vec3): number {
   const max = Math.max(Math.abs(value.x), Math.abs(value.y), Math.abs(value.z));
   if (max < ABS_MIN_VALUE)
     return 1;

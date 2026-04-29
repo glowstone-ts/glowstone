@@ -3,6 +3,7 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
+import { PositionMoveRotation } from '../../datatypes/PositionMoveRotation';
 
 export enum Relative {
 	X = 1 << 0,
@@ -14,17 +15,6 @@ export enum Relative {
 	DeltaY = 1 << 6,
 	DeltaZ = 1 << 7,
 	YawDelta = 1 << 8
-}
-
-export type PositionMoveRotation = {
-	x: number;
-	y: number;
-	z: number;
-	dx: number;
-	dy: number;
-	dz: number;
-	yaw: number;
-	pitch: number;
 }
 
 export class ClientboundPlayerPositionPacket extends DripleafPacket {
@@ -39,37 +29,21 @@ export class ClientboundPlayerPositionPacket extends DripleafPacket {
 	constructor(
 		public teleportId: number,
 		public change: PositionMoveRotation,
-		public relatives: number
+		public relatives: Relative
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
 		writer.writeVarInt(this.teleportId);
-		writer.writeDouble(this.change.x);
-		writer.writeDouble(this.change.y);
-		writer.writeDouble(this.change.z);
-		writer.writeDouble(this.change.dx);
-		writer.writeDouble(this.change.dy);
-		writer.writeDouble(this.change.dz);
-		writer.writeFloat(this.change.yaw);
-		writer.writeFloat(this.change.pitch);
-		writer.writeInt(this.relatives);
+		this.change.write(writer);
+		writer.writeByte(this.relatives);
 	}
 
 	static read(reader: PacketReader): ClientboundPlayerPositionPacket {
 		const teleportId = reader.readVarInt();
-		const change: PositionMoveRotation = {
-			x: reader.readDouble(),
-			y: reader.readDouble(),
-			z: reader.readDouble(),
-			dx: reader.readDouble(),
-			dy: reader.readDouble(),
-			dz: reader.readDouble(),
-			yaw: reader.readFloat(),
-			pitch: reader.readFloat()
-		};
-		const relatives = reader.readInt();
+		const change = PositionMoveRotation.read(reader);
+		const relatives = reader.readByte();
 		return new ClientboundPlayerPositionPacket(teleportId, change, relatives);
 	}
 }

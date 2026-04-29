@@ -2,7 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
+import { Direction, State } from '../../types';
+import type { Vec3 } from 'vec3';
 
 export class ClientboundSetEntityMotionPacket extends DripleafPacket {
 	static readonly id = 0x65;
@@ -15,19 +16,19 @@ export class ClientboundSetEntityMotionPacket extends DripleafPacket {
 
 	constructor(
 		public entityId: number,
-		public movement: Position // todo: should be a vec3
+		public movement: Vec3
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
 		writer.writeVarInt(this.entityId);
-		writer.writePosition(this.movement);
+		writer.writeLpVec3(this.movement);
 	}
 
 	static read(reader: PacketReader): ClientboundSetEntityMotionPacket {
 		const entityId = reader.readVarInt();
-		const movement = reader.readPosition();
+		const movement = reader.readLpVec3();
 		return new ClientboundSetEntityMotionPacket(entityId, movement);
 	}
 }

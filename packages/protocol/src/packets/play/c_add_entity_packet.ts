@@ -2,7 +2,8 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type LpVec3 } from '../../types';
+import { Direction, State } from '../../types';
+import type { Vec3 } from 'vec3';
 
 export class ClientboundAddEntityPacket extends DripleafPacket {
 	static readonly id = 0x01;
@@ -20,7 +21,7 @@ export class ClientboundAddEntityPacket extends DripleafPacket {
 		public x: number,
 		public y: number,
 		public z: number,
-		public velocity: LpVec3,
+		public movement: Vec3,
 		public pitch: number,
 		public yaw: number,
 		public headYaw: number,
@@ -36,7 +37,7 @@ export class ClientboundAddEntityPacket extends DripleafPacket {
 		writer.writeDouble(this.x);
 		writer.writeDouble(this.y);
 		writer.writeDouble(this.z);
-		writer.writeLpVec3(this.velocity);
+		writer.writeLpVec3(this.movement);
 		writer.writeAngle(this.pitch);
 		writer.writeAngle(this.yaw);
 		writer.writeAngle(this.headYaw);
@@ -50,11 +51,11 @@ export class ClientboundAddEntityPacket extends DripleafPacket {
 		const x = reader.readDouble();
 		const y = reader.readDouble();
 		const z = reader.readDouble();
-		const velocity = reader.readLpVec3();
+		const movement = reader.readLpVec3();
 		const pitch = reader.readAngle();
 		const yaw = reader.readAngle();
 		const headYaw = reader.readAngle();
 		const data = reader.readVarInt();
-		return new ClientboundAddEntityPacket(entityId, entityUuid, type, x, y, z, velocity, pitch, yaw, headYaw, data);
+		return new ClientboundAddEntityPacket(entityId, entityUuid, type, x, y, z, movement, pitch, yaw, headYaw, data);
 	}
 }

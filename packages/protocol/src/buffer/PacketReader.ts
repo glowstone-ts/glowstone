@@ -1,7 +1,7 @@
 import { NbtReader, NbtTagType, type NbtTag } from "@dripleaf/nbt";
-import type { LpVec3, Position } from "../types";
-import { readLpVec3 as readLpVec3Value } from "./lpvec3";
+import { readLpVec3, readLpVec3 as readLpVec3Value } from "./lpvec3";
 import { decodeVarInt, decodeVarLong } from "./varint";
+import { Vec3 } from "vec3";
 
 const IDENTIFIER_PATTERN = /^[0-9a-z._-]+:[0-9a-z._\-\/]+$/;
 
@@ -121,7 +121,7 @@ export class PacketReader {
     return value;
   }
 
-  readPosition(): Position {
+  readBlockPos(): Vec3 {
     const value = this.readLong();
 
     let x = Number(value >> 38n);
@@ -133,17 +133,24 @@ export class PacketReader {
     if (z >= 1 << 25) z -= 1 << 26;
 
     if (x < -33554432 || x > 33554431 || y < -2048 || y > 2047 || z < -33554432 || z > 33554431)
-      throw new Error(`Position out of range: ${x}, ${y}, ${z}`);
+      throw new Error(`Vec3 out of range: ${x}, ${y}, ${z}`);
 
-    return { x, y, z };
+    return new Vec3(x, y, z);
+  }
+  
+  readVec3d(): Vec3 {
+    const x = this.readDouble();
+    const y = this.readDouble();
+    const z = this.readDouble();
+    return new Vec3(x, y, z);
   }
 
   readAngle(): number {
     return this.readUnsignedByte() * 360 / 256;
   }
 
-  readLpVec3(): LpVec3 {
-    const [value, offset] = readLpVec3Value(this.bytes, this.offset);
+  readLpVec3(): Vec3 {
+    const [value, offset] = readLpVec3(this.bytes, this.offset);
     this.offset = offset;
     return value;
   }

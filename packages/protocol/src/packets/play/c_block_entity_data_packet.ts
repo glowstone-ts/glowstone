@@ -2,8 +2,9 @@
 
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
-import { Direction, State, type Position } from '../../types';
+import { Direction, State } from '../../types';
 import type { UnnamedNbtTag } from '@dripleaf/nbt';
+import type { Vec3 } from 'vec3';
 
 export class ClientboundBlockEntityDataPacket extends DripleafPacket {
 	static readonly id = 0x06;
@@ -15,23 +16,23 @@ export class ClientboundBlockEntityDataPacket extends DripleafPacket {
 	override readonly direction = ClientboundBlockEntityDataPacket.direction;
 
 	constructor(
-		public location: Position,
-		public type: number,
+		public position: Vec3,
+		public type: number, // todo: registry
 		public data: UnnamedNbtTag
 	) {
 		super();
 	}
 
 	write(writer: PacketWriter) {
-		writer.writePosition(this.location);
+		writer.writeBlockPos(this.position);
 		writer.writeUnsignedByte(this.type);
 		writer.writeNbt(this.data);
 	}
 
 	static read(reader: PacketReader): ClientboundBlockEntityDataPacket {
-		const location = reader.readPosition();
+		const position = reader.readBlockPos();
 		const type = reader.readUnsignedByte();
 		const data = reader.readNbt();
-		return new ClientboundBlockEntityDataPacket(location, type, data);
+		return new ClientboundBlockEntityDataPacket(position, type, data);
 	}
 }
