@@ -21,6 +21,15 @@
         "typescript": "^5",
       },
     },
+    "packages/inventory": {
+      "name": "@dripleaf/inventory",
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/nbt": {
       "name": "@dripleaf/nbt",
       "devDependencies": {
@@ -56,6 +65,8 @@
   },
   "packages": {
     "@dripleaf/chat": ["@dripleaf/chat@workspace:packages/chat"],
+
+    "@dripleaf/inventory": ["@dripleaf/inventory@workspace:packages/inventory"],
 
     "@dripleaf/nbt": ["@dripleaf/nbt@workspace:packages/nbt"],
 
