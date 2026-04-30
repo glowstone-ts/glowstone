@@ -3,11 +3,11 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket } from '../DripleafPacket';
 import { Direction, State } from '../../types';
-import type { NbtTag } from '@dripleaf/nbt';
+import type { UnnamedNbtTag } from '@dripleaf/nbt';
 
 type RegistryEntry = {
 	entryId: string;
-	data?: Omit<NbtTag, "name"> | null;
+	data: UnnamedNbtTag | null;
 }
 
 export class ClientboundRegistryDataPacket extends DripleafPacket {
@@ -28,22 +28,19 @@ export class ClientboundRegistryDataPacket extends DripleafPacket {
 
 	write(writer: PacketWriter) {
 		writer.writeString(this.registryId);
-		writer.writeVarInt(this.entries.length);
-		for (const entry of this.entries) {
+		writer.writeArray(this.entries, (entry) => {
 			writer.writeString(entry.entryId);
 			writer.writePrefixedOptional(entry.data, (v) => writer.writeNbt(v));
-		}
+		});
 	}
 
 	static read(reader: PacketReader): ClientboundRegistryDataPacket {
 		const registryId = reader.readString();
-		const entriesLength = reader.readVarInt();
-		const entries: RegistryEntry[] = [];
-		for (let i = 0; i < entriesLength; i++) {
+		const entries = reader.readArray(() => {
 			const entryId = reader.readString();
 			const data = reader.readPrefixedOptional(() => reader.readNbt());
-			entries.push({ entryId, data });
-		}
+			return { entryId, data };
+		});
 		return new ClientboundRegistryDataPacket(registryId, entries);
 	}
 }

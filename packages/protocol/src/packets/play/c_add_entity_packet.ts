@@ -18,7 +18,7 @@ export class ClientboundAddEntityPacket extends DripleafPacket {
 	constructor(
 		public entityId: number,
 		public entityUuid: UUID,
-		public type: number,
+		public type: number, // todo: Registries.ENTITY_TYPE
 		public x: number,
 		public y: number,
 		public z: number,
@@ -39,9 +39,9 @@ export class ClientboundAddEntityPacket extends DripleafPacket {
 		writer.writeDouble(this.y);
 		writer.writeDouble(this.z);
 		writer.writeLpVec3(this.movement);
-		writer.writeAngle(this.pitch);
-		writer.writeAngle(this.yaw);
-		writer.writeAngle(this.headYaw);
+		writer.writeByte(this.pitch);
+		writer.writeByte(this.yaw);
+		writer.writeByte(this.headYaw);
 		writer.writeVarInt(this.data);
 	}
 
@@ -53,9 +53,9 @@ export class ClientboundAddEntityPacket extends DripleafPacket {
 		const y = reader.readDouble();
 		const z = reader.readDouble();
 		const movement = reader.readLpVec3();
-		const pitch = reader.readAngle();
-		const yaw = reader.readAngle();
-		const headYaw = reader.readAngle();
+		const pitch = reader.readByte();
+		const yaw = reader.readByte();
+		const headYaw = reader.readByte();
 		const data = reader.readVarInt();
 		return new ClientboundAddEntityPacket(entityId, entityUuid, type, x, y, z, movement, pitch, yaw, headYaw, data);
 	}
