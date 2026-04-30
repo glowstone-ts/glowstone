@@ -9,10 +9,10 @@ import type { UUID } from 'node:crypto';
 export enum BossEventAction {
 	Add = 0,
 	Remove = 1,
-	UpdateHealth = 2,
-	UpdateTitle = 3,
+	UpdateProgress = 2,
+	UpdateName = 3,
 	UpdateStyle = 4,
-	UpdateFlags = 5
+	UpdateProperties = 5
 }
 
 export enum BossBarColor {
@@ -43,11 +43,11 @@ export type BossEventAddOperation = {
 
 export type BossEventRemoveOperation = Record<string, never>;
 
-export type BossEventUpdateHealthOperation = {
+export type BossEventUpdateProgressOperation = {
 	health: number;
 }
 
-export type BossEventUpdateTitleOperation = {
+export type BossEventUpdateNameOperation = {
 	title: UnnamedNbtTag;
 }
 
@@ -56,17 +56,17 @@ export type BossEventUpdateStyleOperation = {
 	dividers: BossBarDividers;
 }
 
-export type BossEventUpdateFlagsOperation = {
+export type BossEventUpdatePropertiesOperation = {
 	flags: number;
 }
 
 export type BossEventOperation =
 	| BossEventAddOperation
 	| BossEventRemoveOperation
-	| BossEventUpdateHealthOperation
-	| BossEventUpdateTitleOperation
+	| BossEventUpdateProgressOperation
+	| BossEventUpdateNameOperation
 	| BossEventUpdateStyleOperation
-	| BossEventUpdateFlagsOperation;
+	| BossEventUpdatePropertiesOperation;
 
 export class ClientboundBossEventPacket extends DripleafPacket {
 	static readonly id = 0x09;
@@ -100,11 +100,11 @@ export class ClientboundBossEventPacket extends DripleafPacket {
 			}
 			case BossEventAction.Remove:
 				return;
-			case BossEventAction.UpdateHealth:
-				writer.writeFloat((this.operation as BossEventUpdateHealthOperation).health);
+			case BossEventAction.UpdateProgress:
+				writer.writeFloat((this.operation as BossEventUpdateProgressOperation).health);
 				return;
-			case BossEventAction.UpdateTitle:
-				writer.writeNbt((this.operation as BossEventUpdateTitleOperation).title);
+			case BossEventAction.UpdateName:
+				writer.writeNbt((this.operation as BossEventUpdateNameOperation).title);
 				return;
 			case BossEventAction.UpdateStyle: {
 				const value = this.operation as BossEventUpdateStyleOperation;
@@ -112,8 +112,8 @@ export class ClientboundBossEventPacket extends DripleafPacket {
 				writer.writeVarInt(value.dividers);
 				return;
 			}
-			case BossEventAction.UpdateFlags:
-				writer.writeUnsignedByte((this.operation as BossEventUpdateFlagsOperation).flags);
+			case BossEventAction.UpdateProperties:
+				writer.writeByte((this.operation as BossEventUpdatePropertiesOperation).flags);
 				return;
 			default:
 				throw new Error(`Unknown boss event action: ${this.action}`);
@@ -138,10 +138,10 @@ export class ClientboundBossEventPacket extends DripleafPacket {
 			case BossEventAction.Remove:
 				operation = {};
 				break;
-			case BossEventAction.UpdateHealth:
+			case BossEventAction.UpdateProgress:
 				operation = { health: reader.readFloat() };
 				break;
-			case BossEventAction.UpdateTitle:
+			case BossEventAction.UpdateName:
 				operation = { title: reader.readNbt() };
 				break;
 			case BossEventAction.UpdateStyle:
@@ -150,7 +150,7 @@ export class ClientboundBossEventPacket extends DripleafPacket {
 					dividers: reader.readVarInt() as BossBarDividers
 				};
 				break;
-			case BossEventAction.UpdateFlags:
+			case BossEventAction.UpdateProperties:
 				operation = { flags: reader.readUnsignedByte() };
 				break;
 			default:
