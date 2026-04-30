@@ -54,12 +54,13 @@ export class PacketReader {
   }
 
   readInt(): number {
-    return (
+    const value =
       (this.readUnsignedByte() << 24) |
       (this.readUnsignedByte() << 16) |
       (this.readUnsignedByte() << 8) |
-      this.readUnsignedByte()
-    );
+      this.readUnsignedByte();
+
+    return value | 0;
   }
 
   readLong(): bigint {
