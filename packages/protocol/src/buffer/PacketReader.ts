@@ -157,10 +157,6 @@ export class PacketReader {
     return new Vec3(x, y, z);
   }
 
-  readAngle(): number {
-    return this.readUnsignedByte() * 360 / 256;
-  }
-
   readLpVec3(): Vec3 {
     const [value, offset] = readLpVec3(this.bytes, this.offset);
     this.offset = offset;

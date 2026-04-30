@@ -141,15 +141,6 @@ export class PacketWriter {
     this.writeDouble(pos.z);
   }
 
-  writeAngle(degrees: number) {
-    if (!Number.isFinite(degrees))
-      throw new Error("Invalid angle");
-
-    let normalized = degrees % 360;
-    if (normalized < 0) normalized += 360;
-    this.writeUnsignedByte(Math.floor(normalized * 256 / 360));
-  }
-
   writeLpVec3(value: Vec3) {
     writeLpVec3(value, byte => this.writeUnsignedByte(byte), encoded => this.writeVarInt(encoded));
   }
