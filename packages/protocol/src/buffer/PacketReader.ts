@@ -2,6 +2,7 @@ import { NbtReader, NbtTagType, type NbtTag } from "@dripleaf/nbt";
 import { readLpVec3, readLpVec3 as readLpVec3Value } from "./lpvec3";
 import { decodeVarInt, decodeVarLong } from "./varint";
 import { Vec3 } from "vec3";
+import { Either } from "./utils";
 
 const IDENTIFIER_PATTERN = /^[0-9a-z._-]+:[0-9a-z._\-\/]+$/;
 
@@ -205,8 +206,13 @@ export class PacketReader {
     };
   }
 
-  readEither<T1, T2>(read1: () => T1, read2: () => T2): T1 | T2 {
-    return this.readBoolean() ? read1() : read2();
+  readEither<L, R>(
+    readLeft: () => L,
+    readRight: () => R
+  ): Either<L, R> {
+    return this.readBoolean()
+      ? Either.left(readLeft())
+      : Either.right(readRight());
   }
 
   readRemaining(): Uint8Array {

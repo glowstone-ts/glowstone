@@ -2,6 +2,7 @@ import { NbtWriter, type NbtTag } from "@dripleaf/nbt";
 import { writeLpVec3, writeLpVec3 as writeLpVec3Value } from "./lpvec3";
 import { writeVarInt, writeVarLong } from "./varint";
 import type { Vec3 } from "vec3";
+import type { Either } from "./utils";
 
 const INT_MIN = -2147483648;
 const INT_MAX = 2147483647;
@@ -194,16 +195,17 @@ export class PacketWriter {
     this.writeBytes(nbtWriter.finish());
   }
 
-  writeEither<T1, T2>(value: T1 | T2, write1: (value: T1) => void, write2: (value: T2) => void) {
-    if (value === null || value === undefined)
-      throw new Error("Cannot write null or undefined with writeEither");
-
-    const isType1 = (write1 as unknown as (value: unknown) => void)(value) === undefined;
-    this.writeBoolean(isType1);
-    if (isType1) {
-      write1(value as T1);
+  writeEither<L, R>(
+    value: Either<L, R>,
+    writeLeft: (value: L) => void,
+    writeRight: (value: R) => void
+  ) {
+    if (value.type === "left") {
+      this.writeBoolean(true);
+      writeLeft(value.value);
     } else {
-      write2(value as T2);
+      this.writeBoolean(false);
+      writeRight(value.value);
     }
   }
 
