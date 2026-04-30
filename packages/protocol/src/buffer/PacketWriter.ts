@@ -1,5 +1,5 @@
 import { NbtWriter, type NbtTag } from "@dripleaf/nbt";
-import { writeLpVec3, writeLpVec3 as writeLpVec3Value } from "./lpvec3";
+import { writeLpVec3 } from "./lpvec3";
 import { writeVarInt, writeVarLong } from "./varint";
 import type { Vec3 } from "vec3";
 import type { UUID } from "node:crypto";

@@ -1,5 +1,5 @@
 import { NbtReader, NbtTagType, type NbtTag } from "@dripleaf/nbt";
-import { readLpVec3, readLpVec3 as readLpVec3Value } from "./lpvec3";
+import { readLpVec3 } from "./lpvec3";
 import { decodeVarInt, decodeVarLong } from "./varint";
 import { Vec3 } from "vec3";
 import type { UUID } from "node:crypto";
