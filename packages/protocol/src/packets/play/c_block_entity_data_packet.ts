@@ -25,13 +25,13 @@ export class ClientboundBlockEntityDataPacket extends DripleafPacket {
 
 	write(writer: PacketWriter) {
 		writer.writeBlockPos(this.position);
-		writer.writeUnsignedByte(this.type);
+		writer.writeVarInt(this.type);
 		writer.writeNbt(this.data);
 	}
 
 	static read(reader: PacketReader): ClientboundBlockEntityDataPacket {
 		const position = reader.readBlockPos();
-		const type = reader.readUnsignedByte();
+		const type = reader.readVarInt();
 		const data = reader.readNbt();
 		return new ClientboundBlockEntityDataPacket(position, type, data);
 	}
