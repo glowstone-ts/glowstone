@@ -1,5 +1,7 @@
 const DEFAULT_NAMESPACE = "minecraft";
 
+export type ResourceLocation = `${string}:${string}`
+
 export class Identifier {
   readonly #value: string;
   readonly #colonIndex: number;
