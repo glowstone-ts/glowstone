@@ -217,8 +217,14 @@ function assertBigIntArray(type: NbtTagType, value: NbtValue): bigint[] {
 }
 
 function getTagType(value: NbtValue): NbtTagType {
-  if (typeof value === "number")
-    return NbtTagType.Int;
+  if (typeof value === "number") {
+    if (Number.isInteger(value))
+      return NbtTagType.Int;
+
+    return Math.fround(value) === value
+      ? NbtTagType.Float
+      : NbtTagType.Double;
+  }
   if (typeof value === "bigint")
     return NbtTagType.Long;
   if (typeof value === "string")
