@@ -2,18 +2,23 @@ export function toPascalCase(str: string) {
   return str
     .split(/[^a-zA-Z0-9]+/)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join('');
+    .join('')
+    .replace(/^[0-9]/, '_$&');
 }
 
 export function toSnakeCase(str: string) {
   return str
     .split(/[^a-zA-Z0-9]+/)
     .map(word => word.toLowerCase())
-    .join('_');
+    .join('_')
+    .replace(/^[0-9]/, '_$&');
 }
 
 export function toCamelCase(str: string) {
   const pascalCase = toPascalCase(str);
+  if (/^[0-9]/.test(pascalCase)) {
+    return `_${pascalCase}`;
+  }
   return lowerCaseFirst(pascalCase);
 }
 
@@ -34,8 +39,8 @@ export function identifierToPath(identifier: string) {
     return identifier;
   }
 
-  const [_, path] = identifier.startsWith("#") ? identifier.slice(1).split(":") : identifier.split(":");
-  return path;
+  const parts = identifier.startsWith("#") ? identifier.slice(1).split(":") : identifier.split(":");
+  return parts[1] ?? identifier;
 }
 
 export function registryNameToEnumName(registryName: string) {
