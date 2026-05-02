@@ -1,23 +1,24 @@
 import type { NbtCompound, NbtTag, UnnamedNbtTag } from "@dripleaf/nbt"
-import { 
+import {
   DataComponentType,
+  DataComponentTypeRegistry,
   Identifier,
-  type Attribute, 
+  type Attribute,
   type VillagerType as VillagerType,
-  type BlockEntityType, 
-  type BlockType, 
-  type Enchantment, 
-  type EntityType, 
-  type MapDecorationType, 
-  type MobEffect, 
-  type Potion, 
-  type DamageType as RegistryDamageType, 
-  type SoundEvent, 
-  type TrimMaterial, 
-  type TrimPattern, 
-  type Instrument as RegistryInstrument, 
-  type JukeboxSong, 
-  type BannerPattern, 
+  type BlockEntityType,
+  type BlockType,
+  type Enchantment,
+  type EntityType,
+  type MapDecorationType,
+  type MobEffect,
+  type Potion,
+  type DamageType as RegistryDamageType,
+  type SoundEvent,
+  type TrimMaterial,
+  type TrimPattern,
+  type Instrument as RegistryInstrument,
+  type JukeboxSong,
+  type BannerPattern,
   type WolfVariant as RegistryWolfVariant,
   type WolfSoundVariant as RegistryWolfSoundVariant,
   type PigVariant as RegistryPigVariant,
@@ -31,10 +32,22 @@ import {
   type CatSoundVariant as RegistryCatSoundVariant,
   type PaintingVariant as RegistryPaintingVariant,
   type ZombieNautilusVariant as RegistryZombieNautilusVariant,
-  ItemType
+  ItemType,
+  ItemTypeRegistry,
 } from "@dripleaf/registry"
 import type { ItemKind, ItemStack } from "../ItemStack"
 import type { Vec3 } from "vec3"
+import { DEFAULT_ITEM_COMPONENTS } from "./generated"
+export type {
+  DefaultItemComponentKind,
+  DefaultItemComponentMap,
+  DefaultItemComponentTypes,
+} from "./generated"
+import type {
+  DefaultItemComponentKind,
+  DefaultItemComponentMap,
+  DefaultItemComponentTypes,
+} from "./generated"
 
 export type CustomData = NbtTag // todo: confirm this with mojang source
 
@@ -680,3 +693,55 @@ export type CatCollar = DyeColor;
 export type SheepColor = DyeColor;
 
 export type ShulkerColor = DyeColor;
+
+const EMPTY_DEFAULT_ITEM_COMPONENTS = Object.freeze({}) as DefaultItemComponentMap
+
+export function resolveItemType(item: ItemKind): ItemType | undefined {
+  return typeof item === "number" ? ItemTypeRegistry.getByProtocolId(item)?.key : ItemTypeRegistry.get(item)?.key
+}
+
+export function resolveItemProtocolId(item: ItemKind): number | undefined {
+  return typeof item === "number" ? ItemTypeRegistry.getByProtocolId(item)?.protocolId : ItemTypeRegistry.get(item)?.protocolId
+}
+
+export function resolveDataComponentType(component: DefaultItemComponentKind | number): DefaultItemComponentKind | undefined {
+  return typeof component === "number" ? DataComponentTypeRegistry.getByProtocolId(component)?.key : DataComponentTypeRegistry.get(component)?.key
+}
+
+export function resolveDataComponentProtocolId(component: DefaultItemComponentKind | number): number | undefined {
+  return typeof component === "number" ? DataComponentTypeRegistry.getByProtocolId(component)?.protocolId : DataComponentTypeRegistry.get(component)?.protocolId
+}
+
+export function getDefaultItemComponents(item: ItemKind): DefaultItemComponentMap {
+  const itemType = resolveItemType(item)
+  if (!itemType) return EMPTY_DEFAULT_ITEM_COMPONENTS
+
+  return (DEFAULT_ITEM_COMPONENTS[itemType] as DefaultItemComponentMap | undefined) ?? EMPTY_DEFAULT_ITEM_COMPONENTS
+}
+
+export function getDefaultComponent<TComponent extends DefaultItemComponentKind>(
+  item: ItemKind,
+  component: TComponent,
+): DefaultItemComponentTypes[TComponent] | undefined {
+  const componentType = resolveDataComponentType(component)
+  if (!componentType) return;
+
+  return getDefaultItemComponents(item)[componentType] as DefaultItemComponentTypes[TComponent] | undefined
+}
+
+export function hasDefaultComponent(item: ItemKind, component: DefaultItemComponentKind | number): boolean {
+  const componentType = resolveDataComponentType(component)
+  if (!componentType) return false
+
+  return Object.hasOwn(getDefaultItemComponents(item), componentType)
+}
+
+const resolvedMaxStackSizeComponentId = resolveDataComponentProtocolId(DataComponentType.MaxStackSize)
+if (resolvedMaxStackSizeComponentId === undefined)
+  throw new Error("Failed to resolve minecraft:max_stack_size data component id")
+
+export const MAX_STACK_SIZE_COMPONENT_ID = resolvedMaxStackSizeComponentId
+
+export function getDefaultItemMaxStackSize(item: ItemKind): number {
+  return getDefaultComponent(item, DataComponentType.MaxStackSize) ?? 64
+}
