@@ -1,4 +1,4 @@
-import type { NbtCompound, NbtTag, UnnamedNbtTag } from "@dripleaf/nbt"
+import type { NbtCompound, NbtTag } from "@dripleaf/nbt"
 import {
   DataComponentType,
   DataComponentTypeRegistry,
@@ -65,17 +65,17 @@ export type UseEffects = {
   speedMultiplier: number
 }
 
-export type CustomName = UnnamedNbtTag // todo: @dripleaf/chat
+export type CustomName = NbtCompound // todo: @dripleaf/chat
 
 export type MinimumAttackCharge = number;
 
 export type DamageType = RegistryDamageType;
 
-export type ItemName = UnnamedNbtTag // todo: @dripleaf/chat
+export type ItemName = NbtCompound // todo: @dripleaf/chat
 
 export type ItemModel = Identifier;
 
-export type Lore = UnnamedNbtTag[] // todo: @dripleaf/chat
+export type Lore = NbtCompound[] // todo: @dripleaf/chat
 
 export enum Rarity {
   Common = "common",
@@ -129,7 +129,7 @@ type AttributeModifierDisplay =
   | { type: "hidden" }
   | {
     type: "override";
-    text: UnnamedNbtTag; // todo: @dripleaf/chat 
+    text: NbtCompound; // todo: @dripleaf/chat 
   };
 
 export enum EquipmentSlotGroup {
