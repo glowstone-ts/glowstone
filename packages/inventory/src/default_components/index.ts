@@ -1,6 +1,15 @@
-import type { NbtTag, UnnamedNbtTag } from "@dripleaf/nbt"
-import type { Attribute, BlockType, DataComponentType, Enchantment, EntityType, MobEffect, DamageType as RegistryDamageType, SoundEvent } from "@dripleaf/registry"
-import type { Identifier, ResourceLocation } from "../../../registry/src/identifier"
+import type { NbtCompound, NbtTag, UnnamedNbtTag } from "@dripleaf/nbt"
+import type { 
+  Identifier,
+  Attribute, 
+  BlockType, 
+  DataComponentType, 
+  Enchantment, 
+  EntityType, 
+  MobEffect, 
+  DamageType as RegistryDamageType, 
+  SoundEvent, 
+} from "@dripleaf/registry"
 import type { ItemKind, ItemStack } from "../ItemStack"
 
 export type CustomData = NbtTag
@@ -27,7 +36,7 @@ export type DamageType = RegistryDamageType;
 
 export type ItemName = UnnamedNbtTag // todo: @dripleaf/chat
 
-export type ItemModel = ResourceLocation;
+export type ItemModel = Identifier;
 
 export type Lore = UnnamedNbtTag[] // todo: @dripleaf/chat
 
@@ -193,7 +202,7 @@ export type UseRemainder = ItemStack;
 
 export type UseCooldown = {
   seconds: number;
-  cooldownGroup: ResourceLocation;
+  cooldownGroup: Identifier;
 }
 
 export type DamageResistant = DamageType[];
@@ -241,8 +250,8 @@ enum EquipmentSlot {
 export type Equippable = {
   slot: EquipmentSlot;
   equipSound: SoundEvent;
-  assetId: ResourceLocation | null;
-  cameraOverlay: ResourceLocation | null;
+  assetId: Identifier | null;
+  cameraOverlay: Identifier | null;
   allowedEntities: EntityType[] | null;
   dispensable: boolean;
   swappable: boolean;
@@ -256,7 +265,7 @@ export type Repairable = ItemKind[];
 
 export type Glider = unknown; // note: its called unit with nothing in it in mojang source :sob:
 
-export type TooltipStyle = ResourceLocation;
+export type TooltipStyle = Identifier;
 
 export type DeathProtection = ConsumeEffect[];
 
