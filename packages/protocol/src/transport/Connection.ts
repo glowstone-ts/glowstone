@@ -44,9 +44,13 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
   }
 
   write(packet: DripleafPacket): void {
+    const definition = packetRegistry.getDefinition(packet);
+    if (!definition)
+      throw new Error(`Unregistered packet ${packet.constructor.name}`);
+
     const bodyWriter = new PacketWriter();
-    bodyWriter.writeVarInt(packet.id);
-    packet.write(bodyWriter);
+    bodyWriter.writeVarInt(definition.id);
+    definition.packet.codec.encode(bodyWriter, packet);
     const frame = encodePacketFrame(bodyWriter.finish(), this.compressionThreshold);
     this.socket.write(frame);
   }
@@ -120,7 +124,7 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     if (!packetType)
       throw new Error(`Unknown packet 0x${packetId.toString(16)} for ${this.state}/${this.incomingDirection}`);
 
-    return packetType.read(reader);
+    return packetType.codec.decode(reader);
   }
 
   private maybeApplyProtocolSideEffects(packet: DripleafPacket) {

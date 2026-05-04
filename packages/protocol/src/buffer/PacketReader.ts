@@ -1,9 +1,11 @@
 import { NbtReader, NbtTagType, type NbtTag } from "@dripleaf/nbt";
+import { Identifier } from "@dripleaf/registry";
 import { readLpVec3 } from "./lpvec3";
 import { decodeVarInt, decodeVarLong } from "./varint";
 import { Vec3 } from "vec3";
 import type { UUID } from "node:crypto";
 import { Either } from "./utils";
+import type { Codec } from "./Codec";
 
 const IDENTIFIER_PATTERN = /^[0-9a-z._-]+:[0-9a-z._\-\/]+$/;
 
@@ -107,11 +109,11 @@ export class PacketReader {
     return value;
   }
 
-  readIdentifier(): string {
+  readIdentifier(): Identifier {
     const value = this.readString(32767);
     if (!IDENTIFIER_PATTERN.test(value))
       throw new Error(`Invalid identifier: ${value}`);
-    return value;
+    return Identifier.from(value);
   }
 
   readUUID(): UUID {
@@ -186,6 +188,10 @@ export class PacketReader {
   readArray<T>(read: () => T): T[] {
     const length = this.readVarInt();
     return Array.from({ length }, () => read());
+  }
+
+  readCodec<T>(valueCodec: Codec<T>): T {
+    return valueCodec.decode(this);
   }
 
   readBytes(length: number): Uint8Array {

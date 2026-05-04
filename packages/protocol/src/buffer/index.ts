@@ -1,3 +1,4 @@
+export * from "./Codec";
 export * from "./PacketReader";
 export * from "./PacketWriter";
 export * from "./lpvec3";

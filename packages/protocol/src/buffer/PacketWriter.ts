@@ -1,9 +1,11 @@
 import { NbtWriter, type NbtTag } from "@dripleaf/nbt";
+import { Identifier } from "@dripleaf/registry";
 import { writeLpVec3 } from "./lpvec3";
 import { writeVarInt, writeVarLong } from "./varint";
 import type { Vec3 } from "vec3";
 import type { UUID } from "node:crypto";
 import type { Either } from "./utils";
+import type { Codec } from "./Codec";
 
 const INT_MIN = -2147483648;
 const INT_MAX = 2147483647;
@@ -98,11 +100,12 @@ export class PacketWriter {
     this.writeBytes(bytes);
   }
 
-  writeIdentifier(value: string) {
-    if (!IDENTIFIER_PATTERN.test(value))
-      throw new Error(`Invalid identifier: ${value}`);
+  writeIdentifier(value: string | Identifier) {
+    const identifier = Identifier.from(value).toString();
+    if (!IDENTIFIER_PATTERN.test(identifier))
+      throw new Error(`Invalid identifier: ${identifier}`);
 
-    this.writeString(value, 32767);
+    this.writeString(identifier, 32767);
   }
 
   writeUUID(value: string | UUID) {
@@ -176,6 +179,10 @@ export class PacketWriter {
     this.writeVarInt(values.length);
     for (const value of values)
       write(value);
+  }
+
+  writeCodec<T>(valueCodec: Codec<T>, value: T) {
+    valueCodec.encode(this, value);
   }
 
   writeBytes(value: Uint8Array) {

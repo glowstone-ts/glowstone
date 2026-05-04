@@ -1,12 +1,53 @@
+import { Identifier } from "@dripleaf/registry";
+import { codec, type PacketReader, type PacketWriter } from "../buffer";
 import type { GameType } from "./GameType";
 import { GlobalPos } from "./GlobalPos";
-import type { PacketReader } from "../buffer/PacketReader";
-import type { PacketWriter } from "../buffer/PacketWriter";
 
 export class CommonPlayerSpawnInfo {
+  static readonly codec = codec<CommonPlayerSpawnInfo>({
+    encode(writer: PacketWriter, value: CommonPlayerSpawnInfo) {
+      writer.writeVarInt(value.dimensionType);
+      writer.writeIdentifier(value.dimension);
+      writer.writeLong(value.seed);
+      writer.writeByte(value.gameType);
+      writer.writeByte(value.previousGameType !== null ? value.previousGameType : -1);
+      writer.writeBoolean(value.isDebug);
+      writer.writeBoolean(value.isFlat);
+      writer.writePrefixedOptional(value.lastDeathLocation, location => writer.writeCodec(GlobalPos.codec, location));
+      writer.writeVarInt(value.portalCooldown);
+      writer.writeVarInt(value.seaLevel);
+    },
+    decode(reader: PacketReader): CommonPlayerSpawnInfo {
+      const dimensionType = reader.readVarInt();
+      const dimension = reader.readIdentifier();
+      const seed = reader.readLong();
+      const gameType = reader.readByte() as GameType;
+      const previousGameTypeByte = reader.readByte();
+      const previousGameType = previousGameTypeByte !== -1 ? (previousGameTypeByte as GameType) : null;
+      const isDebug = reader.readBoolean();
+      const isFlat = reader.readBoolean();
+      const lastDeathLocation = reader.readPrefixedOptional(() => reader.readCodec(GlobalPos.codec));
+      const portalCooldown = reader.readVarInt();
+      const seaLevel = reader.readVarInt();
+
+      return new CommonPlayerSpawnInfo(
+        dimensionType,
+        dimension,
+        seed,
+        gameType,
+        previousGameType,
+        isDebug,
+        isFlat,
+        lastDeathLocation,
+        portalCooldown,
+        seaLevel,
+      );
+    },
+  });
+
   constructor(
     public dimensionType: number, // todo: dimension type id from registry
-    public dimension: string, // todo: resource key
+    public dimension: Identifier,
     public seed: bigint,
     public gameType: GameType,
     public previousGameType: GameType | null,
@@ -16,51 +57,4 @@ export class CommonPlayerSpawnInfo {
     public portalCooldown: number,
     public seaLevel: number
   ) {}
-
-  write(writer: PacketWriter) {
-    writer.writeVarInt(this.dimensionType);
-    writer.writeString(this.dimension);
-    writer.writeLong(this.seed);
-    writer.writeByte(this.gameType);
-    writer.writeByte(this.previousGameType !== null ? this.previousGameType : -1);
-    writer.writeBoolean(this.isDebug);
-    writer.writeBoolean(this.isFlat);
-    writer.writePrefixedOptional(this.lastDeathLocation, (location) => {
-      writer.writeString(location.dimension);
-      writer.writeBlockPos(location.pos);
-    });
-    writer.writeVarInt(this.portalCooldown);
-    writer.writeVarInt(this.seaLevel);
-  }
-  
-  static read(reader: PacketReader): CommonPlayerSpawnInfo {
-    const dimensionType = reader.readVarInt();
-    const dimension = reader.readString();
-    const seed = reader.readLong();
-    const gameType = reader.readByte() as GameType;
-    const previousGameTypeByte = reader.readByte();
-    const previousGameType = previousGameTypeByte !== -1 ? (previousGameTypeByte as GameType) : null;
-    const isDebug = reader.readBoolean();
-    const isFlat = reader.readBoolean();
-    const lastDeathLocation = reader.readPrefixedOptional(() => {
-      const dimension = reader.readString();
-      const position = reader.readBlockPos();
-      return new GlobalPos(dimension, position);
-    });
-    const portalCooldown = reader.readVarInt();
-    const seaLevel = reader.readVarInt();
-
-    return new CommonPlayerSpawnInfo(
-      dimensionType,
-      dimension,
-      seed,
-      gameType,
-      previousGameType,
-      isDebug,
-      isFlat,
-      lastDeathLocation,
-      portalCooldown,
-      seaLevel
-    );
-  }
 }

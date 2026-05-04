@@ -23,8 +23,8 @@ const packetsReport = await getReport(serverJar, "packets");
 const PACKETS_DIR_PATH = "packages/protocol/src/packets";
 
 const stateImports = [];
-const clientboundPackets = [];
-const serverboundPackets = [];
+const stateClientboundPackets = [];
+const stateServerboundPackets = [];
 
 for (const state in packetsReport) {
   const STATE_DIR_PATH = path.join(PACKETS_DIR_PATH, state);
@@ -32,10 +32,22 @@ for (const state in packetsReport) {
   if (existsSync(STATE_DIR_PATH) && shouldWipe) await rm(STATE_DIR_PATH, { recursive: true });
   if (!existsSync(STATE_DIR_PATH)) await mkdir(STATE_DIR_PATH, { recursive: true });
 
-  const stateIndexOutput = [getGeneratedHeader(path.relative(process.cwd(), import.meta.path))];
+  const packetEntriesBySide = {
+    clientbound: Object.entries(packetsReport[state].clientbound ?? {}) as [string, { protocol_id: number }][],
+    serverbound: Object.entries(packetsReport[state].serverbound ?? {}) as [string, { protocol_id: number }][],
+  };
 
-  for (const side in packetsReport[state]) {
-    for (const packetName in packetsReport[state][side]) {
+  packetEntriesBySide.clientbound.sort((left, right) => left[1].protocol_id - right[1].protocol_id);
+  packetEntriesBySide.serverbound.sort((left, right) => left[1].protocol_id - right[1].protocol_id);
+
+  const clientboundPacketNames: string[] = [];
+  const serverboundPacketNames: string[] = [];
+  const stateIndexOutput = [
+    getGeneratedHeader(path.relative(process.cwd(), import.meta.path)),
+  ];
+
+  for (const side of ["clientbound", "serverbound"] as const) {
+    for (const [packetName, packetInfo] of packetEntriesBySide[side]) {
       const packetPathPart = identifierToPath(packetName)!;
 
       const fileStem = `${side[0]!.toLowerCase()}_${toSnakeCase(packetPathPart)}_packet`;
@@ -44,51 +56,41 @@ for (const state in packetsReport) {
 
       const packetClassName = `${upperCaseFirst(side)}${toPascalCase(packetPathPart)}Packet`;
 
-      const protocolId = packetsReport[state][side][packetName].protocol_id;
-
       if (!existsSync(packetFilePath)) {
         const output = [
           getGeneratedHeader(path.relative(process.cwd(), import.meta.path)),
-          "import { Direction, State } from '../../types';",
-          "import { DripleafPacket } from '../DripleafPacket';",
           "import { PacketReader, PacketWriter } from '../../buffer';",
+          "import { DripleafPacket, packetCodec } from '../DripleafPacket';",
           "",
           `export class ${packetClassName} extends DripleafPacket {`,
-          `\tstatic readonly id = 0x${protocolId.toString(16).padStart(2, "0")};`,
-          `\tstatic readonly state = State.${upperCaseFirst(state)};`,
-          `\tstatic readonly direction = Direction.${upperCaseFirst(side)};`,
-          "",
-          `\toverride readonly id = ${packetClassName}.id;`,
-          `\toverride readonly state = ${packetClassName}.state;`,
-          `\toverride readonly direction = ${packetClassName}.direction;`,
+          `\tstatic readonly codec = packetCodec<${packetClassName}>({`,
+          "\t\tencode(writer: PacketWriter, value: " + packetClassName + ") {",
+          `\t\t\tthrow new Error(${JSON.stringify(`TODO: implement ${packetClassName} codec encode`)});`,
+          "\t\t},",
+          "\t\tdecode(reader: PacketReader): " + packetClassName + " {",
+          `\t\t\tthrow new Error(${JSON.stringify(`TODO: implement ${packetClassName} codec decode`)});`,
+          "\t\t},",
+          "\t});",
           "",
           "\tconstructor(",
           "\t\t// todo",
           "\t) {",
           "\t\tsuper();",
           "\t}",
-          "",
-          "\twrite(writer: PacketWriter) {",
-          "\t\t// todo",
-          "\t}",
-          "",
-          `\tstatic read(reader: PacketReader): ${packetClassName} {`,
-          "\t\t// todo",
-          "\t}",
           "}",
         ];
 
         await Bun.write(packetFilePath, output.join("\n"));
 
-        console.log(`Generated packet ${packetClassName} in state ${state} (${side}) with protocol id ${protocolId}`);
+        console.log(`Generated packet ${packetClassName} in state ${state} (${side})`);
       }
 
       stateIndexOutput.push(`export * from './${fileStem}';`);
 
       if (side === "clientbound") {
-        clientboundPackets.push(`\t${state}.${packetClassName},`);
+        clientboundPacketNames.push(packetClassName);
       } else {
-        serverboundPackets.push(`\t${state}.${packetClassName},`);
+        serverboundPacketNames.push(packetClassName);
       }
     }
   }
@@ -96,28 +98,27 @@ for (const state in packetsReport) {
   await Bun.write(path.join(STATE_DIR_PATH, "index.ts"),stateIndexOutput.join("\n"));
 
   stateImports.push(`import * as ${state} from './${state}';`);
+  stateClientboundPackets.push(`const ${state}ClientboundPackets = [${clientboundPacketNames.map(name => `${state}.${name}`).join(", ")}] as const;`);
+  stateServerboundPackets.push(`const ${state}ServerboundPackets = [${serverboundPacketNames.map(name => `${state}.${name}`).join(", ")}] as const;`);
 }
 
 const rootIndexOutput = [
   getGeneratedHeader(path.relative(process.cwd(), import.meta.path)),
-  "import { PacketRegistry, type PacketConstructor } from '../registry/PacketRegistry';",
+  "import { PacketRegistry } from '../registry/PacketRegistry';",
+  "import { State } from '../types';",
   "",
   ...stateImports,
   "",
-  "const serverboundPackets: PacketConstructor[] = [",
-  ...serverboundPackets,
-  "];",
-  "",
-  "const clientboundPackets: PacketConstructor[] = [",
-  ...clientboundPackets,
-  "];",
+  ...stateClientboundPackets,
+  ...stateServerboundPackets,
   "",
   "const packetRegistry = new PacketRegistry();",
   "",
-  "for (const packet of [...serverboundPackets, ...clientboundPackets])",
-  "\tpacketRegistry.register(packet);",
+  ...Object.keys(packetsReport).flatMap(state => [
+    `packetRegistry.register(State.${upperCaseFirst(state)}, ${state}ClientboundPackets, ${state}ServerboundPackets);`,
+  ]),
   "",
-  `export { packetRegistry, serverboundPackets, clientboundPackets, ${Object.keys(packetsReport).join(", ")} };`
+  `export { packetRegistry, ${Object.keys(packetsReport).join(", ")} };`
 ];
 
 await Bun.write(path.join(PACKETS_DIR_PATH, "index.ts"), rootIndexOutput.join("\n"));

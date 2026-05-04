@@ -1,22 +1,23 @@
-import type { PacketReader, PacketWriter } from "../buffer";
+import { codec, type PacketReader, type PacketWriter } from "../buffer";
 
 export class KnownPack {
+  static readonly codec = codec<KnownPack>({
+    encode(writer: PacketWriter, value: KnownPack) {
+      writer.writeString(value.namespace ?? "minecraft");
+      writer.writeString(value.id);
+      writer.writeString(value.version);
+    },
+    decode(reader: PacketReader): KnownPack {
+      const namespace = reader.readString();
+      const id = reader.readString();
+      const version = reader.readString();
+      return new KnownPack(namespace, id, version);
+    },
+  });
+
   constructor(
     public namespace: string | null,
     public id: string,
     public version: string,
   ) {}
-
-  write(writer: PacketWriter) {
-    writer.writeString(this.namespace ?? "minecraft");
-    writer.writeString(this.id);
-    writer.writeString(this.version);
-  }
-
-  static read(reader: PacketReader): KnownPack {
-    const namespace = reader.readString();
-    const id = reader.readString();
-    const version = reader.readString();
-    return new KnownPack(namespace, id, version);
-  }
 }

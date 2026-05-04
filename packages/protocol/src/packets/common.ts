@@ -1,4 +1,5 @@
 import type { UnnamedNbtTag } from "@dripleaf/nbt";
+import type { Either } from "../buffer";
 
 export enum ServerLinkType {
 	BugReport = 0,
@@ -14,6 +15,6 @@ export enum ServerLinkType {
 }
 
 export type ServerLink = {
-	label: ServerLinkType | UnnamedNbtTag;
+	label: Either<ServerLinkType, UnnamedNbtTag>;
 	url: string;
 }
