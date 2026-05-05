@@ -20,5 +20,4 @@ export class ServerboundIntentionPacket extends DripleafPacket {
 	) {
 		super();
 	}
-
 }

@@ -15,5 +15,4 @@ export class ClientboundCustomPayloadPacket extends DripleafPacket {
 	) {
 		super();
 	}
-
 }

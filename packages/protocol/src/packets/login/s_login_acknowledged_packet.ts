@@ -8,5 +8,4 @@ export class ServerboundLoginAcknowledgedPacket extends DripleafPacket {
 	constructor() {
 		super();
 	}
-
 }
