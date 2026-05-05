@@ -16,6 +16,15 @@ export type StructCodecShape<T extends object> = {
 
 type StructCodecEntry<T extends object> = readonly [keyof T & string, Codec<T[keyof T]>];
 
+type EnumLike = Record<string, string | number>;
+type EnumValue<TEnum extends EnumLike> = TEnum[Extract<keyof TEnum, string>];
+
+function getEnumValues<TEnum extends EnumLike>(enumObject: TEnum): EnumValue<TEnum>[] {
+  return Object.keys(enumObject)
+    .filter(key => Number.isNaN(Number(key)))
+    .map(key => enumObject[key as keyof TEnum] as EnumValue<TEnum>);
+}
+
 export const Codecs = {
   bool: primitive<boolean>((writer, value) => writer.writeBoolean(value), reader => reader.readBoolean()),
   byte: primitive<number>((writer, value) => writer.writeByte(value), reader => reader.readByte()),
@@ -45,14 +54,74 @@ export const Codecs = {
   fixedBitSet(byteLength: number): Codec<Uint8Array> {
     return primitive<Uint8Array>((writer, value) => writer.writeFixedBitSet(value, byteLength), reader => reader.readFixedBitSet(byteLength));
   },
-  varIntEnum<T extends number>(): Codec<T> {
-    return primitive<T>((writer, value) => writer.writeVarInt(value), reader => reader.readVarInt() as T);
+  varIntEnum<TEnum extends EnumLike>(enumObject: TEnum): Codec<EnumValue<TEnum>> {
+    const values = getEnumValues(enumObject);
+    const valueToIndex = new Map<string | number, number>();
+
+    for (let index = 0; index < values.length; index++) {
+      const value = values[index];
+      if (typeof value === "string" || typeof value === "number")
+        valueToIndex.set(value, index);
+    }
+
+    return primitive<EnumValue<TEnum>>((writer, value) => {
+      const encoded = valueToIndex.get(value as string | number);
+      if (encoded === undefined)
+        throw new Error(`Unknown enum value: ${String(value)}`);
+      writer.writeVarInt(encoded);
+    }, reader => {
+      const index = reader.readVarInt();
+      const value = values[index];
+      if (value === undefined)
+        throw new Error(`Unknown enum index: ${index}`);
+      return value as EnumValue<TEnum>;
+    });
   },
-  byteEnum<T extends number>(): Codec<T> {
-    return primitive<T>((writer, value) => writer.writeByte(value), reader => reader.readByte() as T);
+  byteEnum<TEnum extends EnumLike>(enumObject: TEnum): Codec<EnumValue<TEnum>> {
+    const values = getEnumValues(enumObject);
+    const valueToIndex = new Map<string | number, number>();
+
+    for (let index = 0; index < values.length; index++) {
+      const value = values[index];
+      if (typeof value === "string" || typeof value === "number")
+        valueToIndex.set(value, index);
+    }
+
+    return primitive<EnumValue<TEnum>>((writer, value) => {
+      const encoded = valueToIndex.get(value as string | number);
+      if (encoded === undefined)
+        throw new Error(`Unknown enum value: ${String(value)}`);
+      writer.writeByte(encoded);
+    }, reader => {
+      const index = reader.readByte();
+      const value = values[index];
+      if (value === undefined)
+        throw new Error(`Unknown enum index: ${index}`);
+      return value as EnumValue<TEnum>;
+    });
   },
-  unsignedByteEnum<T extends number>(): Codec<T> {
-    return primitive<T>((writer, value) => writer.writeUnsignedByte(value), reader => reader.readUnsignedByte() as T);
+  unsignedByteEnum<TEnum extends EnumLike>(enumObject: TEnum): Codec<EnumValue<TEnum>> {
+    const values = getEnumValues(enumObject);
+    const valueToIndex = new Map<string | number, number>();
+
+    for (let index = 0; index < values.length; index++) {
+      const value = values[index];
+      if (typeof value === "string" || typeof value === "number")
+        valueToIndex.set(value, index);
+    }
+
+    return primitive<EnumValue<TEnum>>((writer, value) => {
+      const encoded = valueToIndex.get(value as string | number);
+      if (encoded === undefined)
+        throw new Error(`Unknown enum value: ${String(value)}`);
+      writer.writeUnsignedByte(encoded);
+    }, reader => {
+      const index = reader.readUnsignedByte();
+      const value = values[index];
+      if (value === undefined)
+        throw new Error(`Unknown enum index: ${index}`);
+      return value as EnumValue<TEnum>;
+    });
   },
   boolMask(bit: number): Codec<boolean> {
     return primitive<boolean>(
@@ -62,6 +131,24 @@ export const Codecs = {
   },
   array<T>(itemCodec: Codec<T>): Codec<T[]> {
     return primitive<T[]>((writer, value) => writer.writeArray(value, entry => itemCodec.encode(writer, entry)), reader => reader.readArray(() => itemCodec.decode(reader)));
+  },
+  map<K, V>(keyCodec: Codec<K>, valueCodec: Codec<V>): Codec<Map<K, V>> {
+    return primitive<Map<K, V>>(
+      (writer, value) => {
+        writer.writeVarInt(value.size);
+        for (const [key, entry] of value) {
+          keyCodec.encode(writer, key);
+          valueCodec.encode(writer, entry);
+        }
+      },
+      reader => {
+        const size = reader.readVarInt();
+        const value = new Map<K, V>();
+        for (let index = 0; index < size; index++)
+          value.set(keyCodec.decode(reader), valueCodec.decode(reader));
+        return value;
+      },
+    );
   },
   prefixedOptional<T>(valueCodec: Codec<T>): Codec<T | null> {
     return primitive<T | null>((writer, value) => writer.writePrefixedOptional(value, entry => valueCodec.encode(writer, entry)), reader => reader.readPrefixedOptional(() => valueCodec.decode(reader)));
