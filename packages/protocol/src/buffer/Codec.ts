@@ -175,6 +175,26 @@ export const Codecs = {
   prefixedOptional<T>(valueCodec: Codec<T>): Codec<T | null> {
     return primitive<T | null>((writer, value) => writer.writePrefixedOptional(value, entry => valueCodec.encode(writer, entry)), reader => reader.readPrefixedOptional(() => valueCodec.decode(reader)));
   },
+  conditionalOptional<T>(options: {
+    valueCodec: Codec<T>;
+    shouldEncode: (value: T | null) => boolean;
+    shouldDecode: (reader: PacketReader) => boolean;
+  }): Codec<T | null> {
+    return primitive<T | null>(
+      (writer, value) => {
+        if (!options.shouldEncode(value))
+          return;
+        if (value == null)
+          throw new Error("Conditional optional codec expected a value to encode");
+        options.valueCodec.encode(writer, value);
+      },
+      reader => {
+        if (!options.shouldDecode(reader))
+          return null;
+        return options.valueCodec.decode(reader);
+      },
+    );
+  },
 } as const;
 
 export function codec<T>(value: Codec<T>): Codec<T>;
