@@ -6,19 +6,18 @@ import { InteractionHand } from '../../types';
 
 export class ServerboundUseItemPacket extends DripleafPacket {
 	static readonly codec = packetCodec(ServerboundUseItemPacket, {
-		hand: Codecs.varIntEnum<InteractionHand>(),
+		hand: Codecs.varIntEnum(InteractionHand),
 		sequence: Codecs.varInt,
-		yRot: Codecs.float,
-		xRot: Codecs.float,
+		yaw: Codecs.float,
+		pitch: Codecs.float,
 	});
 
 	constructor(
 		public hand: InteractionHand,
 		public sequence: number,
-		public yRot: number,
-		public xRot: number,
+		public yaw: number,
+		public pitch: number,
 	) {
 		super();
 	}
-
 }

@@ -10,6 +10,10 @@ export interface Codec<T> {
   decode(reader: PacketReader): T;
 }
 
+export type Holder<TReference, TDirect = TReference> =
+  | { kind: "reference"; value: TReference }
+  | { kind: "direct"; value: TDirect };
+
 export type StructCodecShape<T extends object> = {
   [TKey in keyof T]?: Codec<T[TKey]>;
 };
@@ -47,7 +51,6 @@ export const Codecs = {
   byteArray(maxLength = 1048576): Codec<Uint8Array> {
     return primitive<Uint8Array>((writer, value) => writer.writeByteArray(value, maxLength), reader => reader.readByteArray(maxLength));
   },
-  blockPos: primitive<Vec3>((writer, value) => writer.writeBlockPos(value), reader => reader.readBlockPos()),
   vec3d: primitive<Vec3>((writer, value) => writer.writeVec3d(value), reader => reader.readVec3d()),
   lpVec3: primitive<Vec3>((writer, value) => writer.writeLpVec3(value), reader => reader.readLpVec3()),
   bitSet: primitive<bigint[]>((writer, value) => writer.writeBitSet(value), reader => reader.readBitSet()),
@@ -195,6 +198,61 @@ export const Codecs = {
       },
     );
   },
+  holder<TReference extends string | number, TDirect = TReference>(referenceCodec: Codec<TReference>, directCodec: Codec<TDirect>): Codec<Holder<TReference, TDirect>> {
+    return primitive<Holder<TReference, TDirect>>(
+      (writer, value) => {
+        if (value.kind === "reference") {
+          writer.writeVarInt(getEnumIndex(referenceCodec, value.value) + 1);
+          return;
+        }
+
+        writer.writeVarInt(0);
+        directCodec.encode(writer, value.value);
+      },
+      reader => {
+        const id = reader.readVarInt();
+        if (id === 0)
+          return { kind: "direct", value: directCodec.decode(reader) };
+
+        const reference = getEnumValue(referenceCodec, id - 1);
+        return { kind: "reference", value: reference };
+      },
+    );
+  },
+  holderRegistry<TReference extends string | number>(referenceCodec: Codec<TReference>): Codec<Holder<TReference>> {
+    return primitive<Holder<TReference>>(
+      (writer, value) => {
+        if (value.kind !== "reference")
+          throw new Error("Registry holder codec only supports reference holders");
+        writer.writeVarInt(getEnumIndex(referenceCodec, value.value) + 1);
+      },
+      reader => {
+        const id = reader.readVarInt();
+        if (id === 0)
+          throw new Error("Registry holder codec does not support direct holders");
+        return { kind: "reference", value: getEnumValue(referenceCodec, id - 1) };
+      },
+    );
+  },
+  holderEither<TReference extends string | number, TDirect>(referenceCodec: Codec<TReference>, directCodec: Codec<TDirect>): Codec<Holder<TReference, TDirect>> {
+    return primitive<Holder<TReference, TDirect>>(
+      (writer, value) => {
+        if (value.kind === "reference") {
+          writer.writeBoolean(true);
+          referenceCodec.encode(writer, value.value);
+          return;
+        }
+
+        writer.writeBoolean(false);
+        directCodec.encode(writer, value.value);
+      },
+      reader => {
+        if (reader.readBoolean())
+          return { kind: "reference", value: referenceCodec.decode(reader) };
+        return { kind: "direct", value: directCodec.decode(reader) };
+      },
+    );
+  },
 } as const;
 
 export function codec<T>(value: Codec<T>): Codec<T>;
@@ -210,6 +268,28 @@ export function codec<T extends object>(
 
 function primitive<T>(encode: (writer: PacketWriter, value: T) => void, decode: (reader: PacketReader) => T): Codec<T> {
   return { encode, decode };
+}
+
+function getEnumIndex<TReference extends string | number>(codec: Codec<TReference>, value: TReference): number {
+  const writer = {
+    value: -1,
+    writeVarInt(encoded: number) {
+      this.value = encoded;
+    },
+  } as { value: number; writeVarInt: (encoded: number) => void } & PacketWriter;
+  codec.encode(writer, value);
+  if (writer.value < 0)
+    throw new Error(`Holder reference codec must encode as varint enum for value ${String(value)}`);
+  return writer.value;
+}
+
+function getEnumValue<TReference extends string | number>(codec: Codec<TReference>, index: number): TReference {
+  const reader = {
+    readVarInt() {
+      return index;
+    },
+  } as { readVarInt: () => number } & PacketReader;
+  return codec.decode(reader);
 }
 
 function structCodec<T extends object>(type: new (...args: any[]) => T, shape: StructCodecShape<T>): Codec<T> {

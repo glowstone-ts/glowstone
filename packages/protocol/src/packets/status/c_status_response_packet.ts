@@ -3,43 +3,43 @@
 import { PacketReader, PacketWriter } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
 
-type Version = {
+export type Version = {
 	name: string;
 	protocol: number;
 }
 
-type PlayerEntry = {
+export type PlayerEntry = {
 	id: string;
 	name: string;
 }
 
-type Players = {
+export type Players = {
 	max: number;
 	online: number;
 	sample: PlayerEntry[];
 }
 
 export class ClientboundStatusResponsePacket extends DripleafPacket {
-	static readonly codec = packetCodec<ClientboundStatusResponsePacket>({
+	static readonly codec = packetCodec({
 		encode(writer: PacketWriter, value: ClientboundStatusResponsePacket) {
-		writer.writeString(JSON.stringify({
-			version: value.version,
-			players: value.players,
-			description: value.description,
-			favicon: value.favicon,
-			enforcesSecureChat: value.enforcesSecureChat,
-		}));
+			writer.writeString(JSON.stringify({
+				version: value.version,
+				players: value.players,
+				description: value.description,
+				favicon: value.favicon,
+				enforcesSecureChat: value.enforcesSecureChat,
+			}));
 		},
 		decode(reader: PacketReader): ClientboundStatusResponsePacket {
-		const jsonString = reader.readString();
-		const data = JSON.parse(jsonString);
-		return new ClientboundStatusResponsePacket(
-			data.version,
-			data.enforcesSecureChat,
-			data.players,
-			data.description,
-			data.favicon,
-		);
+			const jsonString = reader.readString();
+			const data = JSON.parse(jsonString);
+			return new ClientboundStatusResponsePacket(
+				data.version,
+				data.enforcesSecureChat,
+				data.players,
+				data.description,
+				data.favicon,
+			);
 		},
 	});
 
@@ -52,5 +52,4 @@ export class ClientboundStatusResponsePacket extends DripleafPacket {
 	) {
 		super();
 	}
-
 }

@@ -135,23 +135,6 @@ export class PacketReader {
     ) as UUID;
   }
 
-  readBlockPos(): Vec3 {
-    const value = this.readLong();
-
-    let x = Number(value >> 38n);
-    let y = Number(value & 0xfffn);
-    let z = Number((value >> 12n) & 0x3ffffffn);
-
-    if (x >= 1 << 25) x -= 1 << 26;
-    if (y >= 1 << 11) y -= 1 << 12;
-    if (z >= 1 << 25) z -= 1 << 26;
-
-    if (x < -33554432 || x > 33554431 || y < -2048 || y > 2047 || z < -33554432 || z > 33554431)
-      throw new Error(`Vec3 out of range: ${x}, ${y}, ${z}`);
-
-    return new Vec3(x, y, z);
-  }
-  
   readVec3d(): Vec3 {
     const x = this.readDouble();
     const y = this.readDouble();

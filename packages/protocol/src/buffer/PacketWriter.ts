@@ -124,20 +124,6 @@ export class PacketWriter {
     this.writeLong(lsb);
   }
 
-  writeBlockPos(pos: Vec3) {
-    const { x, y, z } = pos;
-    this.range("Vec3.x", x, -33554432, 33554431);
-    this.range("Vec3.y", y, -2048, 2047);
-    this.range("Vec3.z", z, -33554432, 33554431);
-
-    const packed =
-      (BigInt(x & 0x3ffffff) << 38n) |
-      (BigInt(z & 0x3ffffff) << 12n) |
-      BigInt(y & 0xfff);
-
-    this.writeLong(packed);
-  }
-
   writeVec3d(pos: Vec3) {
     this.writeDouble(pos.x);
     this.writeDouble(pos.y);
