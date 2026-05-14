@@ -1,6 +1,7 @@
 import { SoundEvent } from '@dripleaf/registry'
 import { Codecs } from '../buffer'
 
+export { SoundEvent } from '@dripleaf/registry'
 export type SoundEventValue = {
 	location: SoundEvent
 	fixedRange: number | null
