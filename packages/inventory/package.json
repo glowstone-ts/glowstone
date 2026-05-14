@@ -2,6 +2,9 @@
   "name": "@dripleaf/inventory",
   "module": "src/index.ts",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -9,6 +12,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@dripleaf/chat": "workspace:*",
     "@dripleaf/nbt": "workspace:*",
     "@dripleaf/registry": "workspace:*",
     "vec3": "^0.2.0"

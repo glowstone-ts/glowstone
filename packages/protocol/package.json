@@ -10,6 +10,9 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@dripleaf/nbt": "workspace:*"
+    "@dripleaf/chat": "workspace:*",
+    "@dripleaf/inventory": "workspace:*",
+    "@dripleaf/nbt": "workspace:*",
+    "@dripleaf/registry": "workspace:*"
   }
 }

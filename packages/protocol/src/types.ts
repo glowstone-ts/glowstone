@@ -25,6 +25,11 @@ export enum InteractionHand {
   OffHand = 1,
 }
 
+export enum EntityAnchor {
+  Feet = 0,
+  Eyes = 1,
+}
+
 export type GameProfile = {
   id: string;
   name: string;

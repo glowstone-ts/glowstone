@@ -134,7 +134,7 @@ export class PacketReader {
       hex.slice(20)
     ) as UUID;
   }
-
+  
   readVec3d(): Vec3 {
     const x = this.readDouble();
     const y = this.readDouble();
@@ -191,6 +191,22 @@ export class PacketReader {
   readNbt(): Omit<NbtTag, "name"> {
     const type = this.readUnsignedByte();
     if (!(type in NbtTagType) || type === NbtTagType.End)
+      throw new Error(`Invalid anonymous NBT root type ${type}`);
+
+    const nbtReader = new NbtReader(this.bytes.subarray(this.offset));
+    const value = nbtReader.readPayload(type as Exclude<NbtTagType, NbtTagType.End>);
+    this.offset += nbtReader.offset;
+    return {
+      type: type as Exclude<NbtTagType, NbtTagType.End>,
+      value,
+    };
+  }
+
+  readOptionalNbt(): Omit<NbtTag, "name"> | null {
+    const type = this.readUnsignedByte();
+    if (type === NbtTagType.End)
+      return null;
+    if (!(type in NbtTagType))
       throw new Error(`Invalid anonymous NBT root type ${type}`);
 
     const nbtReader = new NbtReader(this.bytes.subarray(this.offset));
