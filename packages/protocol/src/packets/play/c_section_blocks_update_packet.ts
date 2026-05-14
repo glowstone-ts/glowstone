@@ -11,17 +11,13 @@ export type BlockChangeData = {
 export class ClientboundSectionBlocksUpdatePacket extends DripleafPacket {
 	static readonly codec = packetCodec({
 		encode(writer: PacketWriter, value: ClientboundSectionBlocksUpdatePacket) {
-			writer.writeVarInt(value.sectionX);
-			writer.writeVarInt(value.sectionY);
-			writer.writeVarInt(value.sectionZ);
+			writer.writeLong(packSectionPos(value.sectionX, value.sectionY, value.sectionZ));
 			writer.writeVarInt(value.blocks.length);
 			for (const block of value.blocks)
 				writer.writeVarLong((BigInt(block.blockStateId) << 12n) | BigInt(block.position & 0xfff));
 		},
 		decode(reader: PacketReader): ClientboundSectionBlocksUpdatePacket {
-			const sectionX = reader.readVarInt();
-			const sectionY = reader.readVarInt();
-			const sectionZ = reader.readVarInt();
+			const { x: sectionX, y: sectionY, z: sectionZ } = unpackSectionPos(reader.readLong());
 			const count = reader.readVarInt();
 			const blocks: BlockChangeData[] = [];
 			for (let i = 0; i < count; i++) {
@@ -41,4 +37,20 @@ export class ClientboundSectionBlocksUpdatePacket extends DripleafPacket {
 		super();
 	}
 
+}
+
+function packSectionPos(x: number, y: number, z: number): bigint {
+	return ((BigInt(x & 0x3fffff) << 42n) | (BigInt(z & 0x3fffff) << 20n) | BigInt(y & 0xfffff));
+}
+
+function unpackSectionPos(value: bigint): { x: number; y: number; z: number } {
+	const x = signExtend(Number((value >> 42n) & 0x3fffffn), 22);
+	const z = signExtend(Number((value >> 20n) & 0x3fffffn), 22);
+	const y = signExtend(Number(value & 0xfffffn), 20);
+	return { x, y, z };
+}
+
+function signExtend(value: number, bits: number): number {
+	const shift = 32 - bits;
+	return (value << shift) >> shift;
 }

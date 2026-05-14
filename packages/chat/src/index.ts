@@ -129,6 +129,7 @@ function fromNbtValue(value: NbtValue): unknown {
 }
 
 function fromNbtCompound(compound: NbtCompound): ChatComponent {
+  if (!compound || typeof compound !== "object") return ""
   const result: Record<string, any> = {}
   for (const [key, value] of Object.entries(compound)) {
     if (key === "text" || key === "translate" || key === "color" || key === "font" || key === "insertion" || key === "fallback") {
@@ -136,24 +137,24 @@ function fromNbtCompound(compound: NbtCompound): ChatComponent {
     } else if (key === "bold" || key === "italic" || key === "underlined" || key === "strikethrough" || key === "obfuscated" || key === "reset") {
       result[key] = typeof value === "number" ? value !== 0 : Boolean(value)
     } else if (key === "with") {
-      const arr = Array.isArray(value) ? value : []
+      const arr = getNbtListItems(value)
       result.with = arr.map(v => fromNbtValue(v as NbtValue))
     } else if (key === "extra") {
-      const arr = Array.isArray(value) ? value : []
+      const arr = getNbtListItems(value)
       result.extra = arr.map(v => fromNbtCompound(v as unknown as NbtCompound))
-    } else if (key === "clickEvent") {
+    } else if (key === "clickEvent" || key === "click_event") {
       const ce = value as NbtCompound
       result.clickEvent = {
         action: String(ce.action ?? ""),
         value: String(ce.value ?? ""),
       }
-    } else if (key === "hoverEvent") {
+    } else if (key === "hoverEvent" || key === "hover_event") {
       const he = value as NbtCompound
       const action = String(he.action ?? "")
       if (action === "show_text") {
-        result.hoverEvent = { action, contents: fromNbtCompound(he.contents as NbtCompound) }
+        result.hoverEvent = { action, contents: fromNbtCompound((he.contents ?? he.value) as NbtCompound) }
       } else if (action === "show_item") {
-        const contents = he.contents as NbtCompound
+        const contents = ((he.contents ?? he.value) as NbtCompound | undefined) ?? {}
         result.hoverEvent = {
           action,
           contents: {
@@ -162,7 +163,7 @@ function fromNbtCompound(compound: NbtCompound): ChatComponent {
           },
         }
       } else if (action === "show_entity") {
-        const contents = he.contents as NbtCompound
+        const contents = ((he.contents ?? he.value) as NbtCompound | undefined) ?? {}
         result.hoverEvent = {
           action,
           contents: {
@@ -177,6 +178,13 @@ function fromNbtCompound(compound: NbtCompound): ChatComponent {
   return result as ChatComponent
 }
 
+function getNbtListItems(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value
+  if (value && typeof value === "object" && "items" in value)
+    return (value as { items: unknown[] }).items
+  return []
+}
+
 export function fromNbt(nbt: UnnamedNbtTag): ChatComponent {
   if (nbt.type !== NbtTagType.Compound) return ""
   return fromNbtCompound(nbt.value as NbtCompound)
@@ -185,6 +193,10 @@ export function fromNbt(nbt: UnnamedNbtTag): ChatComponent {
 function extractText(component: ChatComponent): string {
   if (typeof component === "string") return component
   let result = component.text ?? ""
+  if (component.with) {
+    for (const child of component.with)
+      result += typeof child === "object" && child !== null ? extractText(child as ChatComponent) : String(child ?? "")
+  }
   if (component.extra) {
     for (const child of component.extra)
       result += extractText(child)

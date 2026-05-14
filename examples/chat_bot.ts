@@ -19,6 +19,10 @@ bot.on("error", (err: Error) => {
   console.error("error:", err)
 })
 
+bot.on("disconnect", (reason: string) => {
+  console.log("disconnect reason:", reason)
+})
+
 bot.on("end", () => {
   console.log("disconnected")
   process.exit(0)

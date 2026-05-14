@@ -124,7 +124,12 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     if (!packetType)
       throw new Error(`Unknown packet 0x${packetId.toString(16)} for ${this.state}/${this.incomingDirection}`);
 
-    return packetType.codec.decode(reader);
+    try {
+      return packetType.codec.decode(reader);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to decode ${packetType.name} (0x${packetId.toString(16)}) in ${this.state}/${this.incomingDirection}: ${message}`);
+    }
   }
 
   private maybeApplyProtocolSideEffects(packet: DripleafPacket) {

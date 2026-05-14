@@ -3,39 +3,33 @@
 import { Codecs, type PacketReader, type PacketWriter } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
 
-interface Instant {
-	seconds: bigint;
-	nanos: number;
-}
-
 interface LastSeenMessagesUpdate {
 	offset: number;
 	acknowledged: Uint8Array;
+	checksum: number;
 }
 
 export class ServerboundChatPacket extends DripleafPacket {
 	static readonly codec = packetCodec({
 		encode(writer: PacketWriter, value: ServerboundChatPacket) {
 			writer.writeString(value.message, 256);
-			writer.writeLong(value.timestamp.seconds);
-			writer.writeVarInt(value.timestamp.nanos);
+			writer.writeLong(value.timestamp);
 			writer.writeLong(value.salt);
-			writer.writePrefixedOptional(value.signature, sig => writer.writeByteArray(sig));
+			writer.writePrefixedOptional(value.signature, sig => writer.writeBytes(sig));
 			writer.writeVarInt(value.lastSeenMessages.offset);
-			writer.writeFixedBitSet(value.lastSeenMessages.acknowledged, 20);
+			writer.writeFixedBitSet(value.lastSeenMessages.acknowledged, 3);
+			writer.writeByte(value.lastSeenMessages.checksum, 0, 255);
 		},
 		decode(reader: PacketReader): ServerboundChatPacket {
 			return new ServerboundChatPacket(
 				reader.readString(256),
-				{
-					seconds: reader.readLong(),
-					nanos: reader.readVarInt(),
-				},
 				reader.readLong(),
-				reader.readPrefixedOptional(() => reader.readByteArray()),
+				reader.readLong(),
+				reader.readPrefixedOptional(() => reader.readBytes(256)),
 				{
 					offset: reader.readVarInt(),
-					acknowledged: reader.readFixedBitSet(20),
+					acknowledged: reader.readFixedBitSet(3),
+					checksum: reader.readUnsignedByte(),
 				},
 			);
 		},
@@ -43,7 +37,7 @@ export class ServerboundChatPacket extends DripleafPacket {
 
 	constructor(
 		public message: string,
-		public timestamp: Instant,
+		public timestamp: bigint,
 		public salt: bigint,
 		public signature: Uint8Array | null,
 		public lastSeenMessages: LastSeenMessagesUpdate,

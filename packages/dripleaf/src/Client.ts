@@ -83,10 +83,10 @@ export class Client {
     if (!this.connection || !this.loggedIn) throw new Error("Not connected")
     this.connection.write(new play.ServerboundChatPacket(
       message,
-      { seconds: 0n, nanos: 0 },
+      BigInt(Date.now()),
       0n,
       null,
-      { offset: 0, acknowledged: new Uint8Array(20) },
+      { offset: 0, acknowledged: new Uint8Array(3), checksum: 0 },
     ))
   }
 
@@ -110,6 +110,10 @@ export class Client {
       this.profile = packet.profile
       conn.setState(State.Configuration)
       conn.write(new login.ServerboundLoginAcknowledgedPacket())
+      conn.write(new configuration.ServerboundClientInformationPacket(
+        "en_us", 24, ChatVisibility.Full, true, 0,
+        HumanoidArm.Right, false, true, ParticleStatus.All,
+      ))
     })
 
     conn.onPacket(login.ClientboundLoginCompressionPacket, (packet: any) => {
@@ -120,23 +124,34 @@ export class Client {
       this.emit("disconnect", JSON.stringify(packet.reason))
     })
 
+    conn.onPacket(configuration.ClientboundDisconnectPacket, (packet: any) => {
+      this.emit("disconnect", chatComponentFromNbt(packet.reason))
+      conn.disconnect()
+    })
+
     conn.onPacket(configuration.ClientboundFinishConfigurationPacket, () => {
       conn.write(new configuration.ServerboundFinishConfigurationPacket())
       conn.setState(State.Play)
-      conn.write(new configuration.ServerboundClientInformationPacket(
-        "en_us", 24, ChatVisibility.Full, true, 0,
-        HumanoidArm.Right, false, true, ParticleStatus.All,
-      ))
     })
 
     conn.onPacket(play.ClientboundLoginPacket, (packet: any) => {
       this.loggedIn = true
       this.emit("spawn", packet)
+      conn.write(new play.ServerboundPlayerLoadedPacket())
+    })
+
+    conn.onPacket(play.ClientboundPlayerPositionPacket, (packet: any) => {
+      conn.write(new play.ServerboundAcceptTeleportationPacket(packet.teleportId))
     })
 
     conn.onPacket(play.ClientboundSystemChatPacket, (packet: any) => {
       const text = chatComponentFromNbt(packet.content)
       this.emit("chat", text, null)
+    })
+
+    conn.onPacket(play.ClientboundDisconnectPacket, (packet: any) => {
+      this.emit("disconnect", chatComponentFromNbt(packet.reason))
+      conn.disconnect()
     })
   }
 

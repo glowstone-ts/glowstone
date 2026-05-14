@@ -1,4 +1,4 @@
-import { Identifier } from "@dripleaf/registry"
+import { DimensionType, Identifier } from "@dripleaf/registry"
 import { GlobalPos } from "./GlobalPos"
 
 export enum GameType {
@@ -10,7 +10,7 @@ export enum GameType {
 
 export class CommonPlayerSpawnInfo {
   constructor(
-    public dimensionType: Identifier,
+    public dimensionType: DimensionType,
     public dimension: Identifier,
     public seed: bigint,
     public gameType: GameType,

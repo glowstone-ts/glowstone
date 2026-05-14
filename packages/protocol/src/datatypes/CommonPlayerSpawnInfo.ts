@@ -4,7 +4,7 @@ import { codec, Codecs, type PacketReader, type PacketWriter } from "../buffer"
 import { GlobalPosCodec } from "./GlobalPos"
 
 export const CommonPlayerSpawnInfoCodec = codec(CommonPlayerSpawnInfo, {
-  dimensionType: Codecs.identifier,
+  dimensionType: Codecs.varIntEnum(DimensionType),
   dimension: Codecs.identifier,
   seed: Codecs.long,
   gameType: Codecs.byteEnum(GameType),
