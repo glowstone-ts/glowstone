@@ -1,6 +1,7 @@
+import type { ParticleOptions } from '@dripleaf/core';
+import { particleCodec } from '../../datatypes';
 import { Codecs } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-import { particleCodec, type ParticleOptions } from '../../datatypes';
 
 export class ClientboundLevelParticlesPacket extends DripleafPacket {
 	static readonly codec = packetCodec(ClientboundLevelParticlesPacket, {

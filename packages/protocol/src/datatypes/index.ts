@@ -1,6 +1,8 @@
 export * from "./CommonPlayerSpawnInfo";
 export * from "./BlockPos";
+export * from "./ChunkPos";
 export * from "./GlobalPos";
+export * from "./BlockHitResult";
 export * from "./KnownPack";
 export * from "./Dialog";
 export * from "./ParticleOptions";
@@ -15,3 +17,4 @@ export * from "./RelativeMovements";
 export * from "./PlayerInput";
 export * from "./RespawnData";
 export * from "./SoundHolder";
+export * from "./GameProfile";

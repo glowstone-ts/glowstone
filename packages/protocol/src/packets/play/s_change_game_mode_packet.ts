@@ -2,8 +2,7 @@
 
 import { Codecs } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-// todo: move to common or make all enums individual datatypes
-import { GameType } from '../../datatypes/GameType';
+import { GameType } from '@dripleaf/core';
 
 export class ServerboundChangeGameModePacket extends DripleafPacket {
 	static readonly codec = packetCodec(ServerboundChangeGameModePacket, {

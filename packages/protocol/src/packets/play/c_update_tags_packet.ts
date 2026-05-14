@@ -2,7 +2,8 @@
 
 import { Codecs } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-import { TagNetworkPayloadCodec, type TagNetworkPayload } from '../../datatypes';
+import type { TagNetworkPayload } from '@dripleaf/core';
+import { TagNetworkPayloadCodec } from '../../datatypes';
 
 export class ClientboundUpdateTagsPacket extends DripleafPacket {
 	static readonly codec = packetCodec(ClientboundUpdateTagsPacket, {

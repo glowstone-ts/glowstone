@@ -2,7 +2,8 @@
 
 import { Codecs, type Holder } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-import { soundHolderCodec, type SoundEventValue, SoundEvent } from '../../datatypes';
+import type { SoundEventValue } from '@dripleaf/core';
+import { soundHolderCodec } from '../../datatypes';
 import { SoundSource } from '../common';
 
 export class ClientboundSoundEntityPacket extends DripleafPacket {
@@ -16,7 +17,7 @@ export class ClientboundSoundEntityPacket extends DripleafPacket {
 	})
 
 	constructor(
-		public sound: Holder<SoundEvent, SoundEventValue>,
+		public sound: Holder<string, SoundEventValue>,
 		public source: SoundSource,
 		public id: number,
 		public volume: number,

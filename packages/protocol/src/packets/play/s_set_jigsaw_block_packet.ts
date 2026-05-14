@@ -2,12 +2,13 @@
 
 import { Codecs } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-import { BlockPos } from '../../datatypes/BlockPos';
+import { BlockPos } from '@dripleaf/core';
+import { BlockPosCodec } from '../../datatypes/BlockPos';
 import type { Identifier } from '@dripleaf/registry';
 
 export class ServerboundSetJigsawBlockPacket extends DripleafPacket {
 	static readonly codec = packetCodec(ServerboundSetJigsawBlockPacket, {
-		pos: BlockPos.codec,
+		pos: BlockPosCodec,
 		name: Codecs.identifier,
 		target: Codecs.identifier,
 		pool: Codecs.identifier,

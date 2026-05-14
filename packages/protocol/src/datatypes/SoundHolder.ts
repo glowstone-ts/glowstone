@@ -1,23 +1,19 @@
-import { SoundEvent } from '@dripleaf/registry'
-import { Codecs } from '../buffer'
+import type { SoundEventValue } from "@dripleaf/core"
+import { Codecs } from "../buffer"
 
-export { SoundEvent } from '@dripleaf/registry'
-export type SoundEventValue = {
-	location: SoundEvent
-	fixedRange: number | null
-}
+export type { SoundEventValue }
 
 const directSoundEventCodec = {
-	encode(writer: any, value: SoundEventValue) {
-		Codecs.varIntEnum(SoundEvent).encode(writer, value.location)
-		writer.writePrefixedOptional(value.fixedRange, (range: number) => writer.writeFloat(range))
-	},
-	decode(reader: any): SoundEventValue {
-		return {
-			location: Codecs.varIntEnum(SoundEvent).decode(reader),
-			fixedRange: reader.readPrefixedOptional(() => reader.readFloat()),
-		}
-	},
+  encode(writer: any, value: SoundEventValue) {
+    Codecs.identifier.encode(writer, value.location)
+    writer.writePrefixedOptional(value.fixedRange, (range: number) => writer.writeFloat(range))
+  },
+  decode(reader: any): SoundEventValue {
+    return {
+      location: Codecs.identifier.decode(reader) as any,
+      fixedRange: reader.readPrefixedOptional(() => reader.readFloat()),
+    }
+  },
 }
 
-export const soundHolderCodec = Codecs.holder(Codecs.varIntEnum(SoundEvent), directSoundEventCodec)
+export const soundHolderCodec = Codecs.holderEither(Codecs.string(32767), directSoundEventCodec)
