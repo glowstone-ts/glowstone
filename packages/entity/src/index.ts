@@ -1,5 +1,5 @@
 import { EntityType, ItemType } from "@dripleaf/registry"
-import { PacketReader, PacketWriter, Codecs } from "../../protocol/src/buffer/index.ts"
+import { PacketReader, PacketWriter, Codecs } from "@dripleaf/protocol"
 import { BlockPos, GlobalPos } from "@dripleaf/core"
 
 export { EntityType, EntityTypeRegistry } from "@dripleaf/registry"

@@ -17,6 +17,7 @@
     "@dripleaf/registry": "workspace:*",
     "@dripleaf/chat": "workspace:*",
     "@dripleaf/block": "workspace:*",
+    "@dripleaf/inventory": "workspace:*",
     "@dripleaf/entity": "workspace:*",
     "@dripleaf/world": "workspace:*",
     "@dripleaf/item": "workspace:*",

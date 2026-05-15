@@ -1,15 +1,11 @@
-# registry
+# @dripleaf/registry
 
-To install dependencies:
+Replacement for **prismarine-registry**: `Identifier`, `Registry`, generated enums/tags, and `RegistryManager` for runtime `RegistryData` / `UpdateTags` from the configuration phase.
 
-```bash
-bun install
+```ts
+import { RegistryManager } from "@dripleaf/registry"
+
+const manager = new RegistryManager()
+manager.applyRegistryData("minecraft:block", entries)
+manager.getTag("minecraft:block", "minecraft:logs")
 ```
-
-To run:
-
-```bash
-bun run src/index.ts
-```
-
-This project was created using `bun init` in bun v1.3.12. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

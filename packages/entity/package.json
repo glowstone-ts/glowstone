@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@dripleaf/core": "workspace:*",
+    "@dripleaf/protocol": "workspace:*",
     "@dripleaf/registry": "workspace:*"
   }
 }
