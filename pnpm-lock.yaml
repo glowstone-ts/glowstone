@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@dripleaf/pathfinder':
+        specifier: workspace:*
+        version: link:packages/pathfinder
+      '@dripleaf/physics':
+        specifier: workspace:*
+        version: link:packages/physics
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -18,6 +24,256 @@ importers:
       '@types/node':
         specifier: ^25.6.0
         version: 25.8.0
+
+  packages/block:
+    dependencies:
+      '@dripleaf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+
+  packages/chat:
+    dependencies:
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+
+  packages/core:
+    dependencies:
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vec3:
+        specifier: ^0.2.0
+        version: 0.2.0
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+
+  packages/dripleaf:
+    dependencies:
+      '@dripleaf/block':
+        specifier: workspace:*
+        version: link:../block
+      '@dripleaf/chat':
+        specifier: workspace:*
+        version: link:../chat
+      '@dripleaf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@dripleaf/entity':
+        specifier: workspace:*
+        version: link:../entity
+      '@dripleaf/inventory':
+        specifier: workspace:*
+        version: link:../inventory
+      '@dripleaf/item':
+        specifier: workspace:*
+        version: link:../item
+      '@dripleaf/pathfinder':
+        specifier: workspace:*
+        version: link:../pathfinder
+      '@dripleaf/physics':
+        specifier: workspace:*
+        version: link:../physics
+      '@dripleaf/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@dripleaf/recipe':
+        specifier: workspace:*
+        version: link:../recipe
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      '@dripleaf/world':
+        specifier: workspace:*
+        version: link:../world
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+
+  packages/entity:
+    dependencies:
+      '@dripleaf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@dripleaf/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+
+  packages/inventory:
+    dependencies:
+      '@dripleaf/chat':
+        specifier: workspace:*
+        version: link:../chat
+      '@dripleaf/nbt':
+        specifier: workspace:*
+        version: link:../nbt
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vec3:
+        specifier: ^0.2.0
+        version: 0.2.0
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+
+  packages/item:
+    dependencies:
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+
+  packages/nbt:
+    dependencies:
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.8.0
+
+  packages/pathfinder:
+    dependencies:
+      '@dripleaf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@dripleaf/physics':
+        specifier: workspace:*
+        version: link:../physics
+      '@dripleaf/world':
+        specifier: workspace:*
+        version: link:../world
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/physics:
+    dependencies:
+      '@dripleaf/block':
+        specifier: workspace:*
+        version: link:../block
+      '@dripleaf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/protocol:
+    dependencies:
+      '@dripleaf/chat':
+        specifier: workspace:*
+        version: link:../chat
+      '@dripleaf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@dripleaf/inventory':
+        specifier: workspace:*
+        version: link:../inventory
+      '@dripleaf/nbt':
+        specifier: workspace:*
+        version: link:../nbt
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+      typed-emitter:
+        specifier: ^2.1.0
+        version: 2.1.0
+
+  packages/recipe:
+    dependencies:
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+
+  packages/registry:
+    dependencies:
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
+
+  packages/world:
+    dependencies:
+      '@dripleaf/block':
+        specifier: workspace:*
+        version: link:../block
+      '@dripleaf/core':
+        specifier: workspace:*
+        version: link:../core
+      '@dripleaf/entity':
+        specifier: workspace:*
+        version: link:../entity
+      '@dripleaf/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+      '@dripleaf/registry':
+        specifier: workspace:*
+        version: link:../registry
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.3.14
 
 packages:
 
@@ -30,6 +286,15 @@ packages:
   bun-types@1.3.14:
     resolution: {integrity: sha512-4N0ig0fEomHt5R0KCFWjovxow98rIoRwKolrYdCcknNwMekCXRnWEUvgu5soYV8QXtVsrUD8B95MBOZGPvr6KQ==}
 
+  rxjs@7.8.2:
+    resolution: {integrity: sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA==}
+
+  tslib@2.8.1:
+    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
+  typed-emitter@2.1.0:
+    resolution: {integrity: sha512-g/KzbYKbH5C2vPkaXGu8DJlHrGKHLsM25Zg9WuC9pMGfuvT+X25tZQWo5fK1BjBm8+UrVE9LDCvaY0CQk+fXDA==}
+
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
@@ -37,6 +302,9 @@ packages:
 
   undici-types@7.24.6:
     resolution: {integrity: sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==}
+
+  vec3@0.2.0:
+    resolution: {integrity: sha512-jOjU4zbCNWOKOGLHop1I0J2Ar4h5Zz76455LJhJKhiOJwI21QP6d5TnKklNZDKG+c5h71zWtPAbd9wh+Va57OQ==}
 
 snapshots:
 
@@ -52,6 +320,20 @@ snapshots:
     dependencies:
       '@types/node': 25.8.0
 
+  rxjs@7.8.2:
+    dependencies:
+      tslib: 2.8.1
+    optional: true
+
+  tslib@2.8.1:
+    optional: true
+
+  typed-emitter@2.1.0:
+    optionalDependencies:
+      rxjs: 7.8.2
+
   typescript@5.9.3: {}
 
   undici-types@7.24.6: {}
+
+  vec3@0.2.0: {}

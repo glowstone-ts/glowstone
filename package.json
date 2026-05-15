@@ -12,9 +12,13 @@
   "workspaces": [
     "packages/*"
   ],
+  "dependencies": {
+    "@dripleaf/pathfinder": "workspace:*",
+    "@dripleaf/physics": "workspace:*"
+  },
   "scripts": {
     "codegen": "bun run codegen/generate_packets.ts && bun run codegen/generate_registries.ts && bun run codegen/generate_tags.ts && bun run codegen/generate_data_components.ts",
-    "test": "bun test packages/nbt/tests packages/registry/tests packages/world/tests",
+    "test": "bun test packages/nbt/tests packages/registry/tests packages/world/tests packages/pathfinder/tests packages/inventory/tests",
     "test:smoke": "bun run tests/real_server_smoke.ts",
     "example:bot": "bun run examples/bot_features.ts"
   },
