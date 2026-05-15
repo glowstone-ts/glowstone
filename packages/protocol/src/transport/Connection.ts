@@ -1,5 +1,6 @@
 // This file was inspired by https://github.com/janispritzkau/mcproto so yeah shoutout!!
 import { EventEmitter } from "node:events";
+import { createCipheriv, createDecipheriv } from "node:crypto";
 import type { Socket } from "node:net";
 import type TypedEmitter from "typed-emitter";
 import { concatBytes, PacketReader, PacketWriter, toUint8Array } from "../buffer";
@@ -27,6 +28,8 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
 
   private readonly incomingDirection: Direction;
   private buffer: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
+  private cipher: ReturnType<typeof createCipheriv> | null = null;
+  private decipher: ReturnType<typeof createDecipheriv> | null = null;
   private readonly packetListeners = new Map<PacketConstructor, Set<PacketListener<DripleafPacket>>>();
 
   constructor(
@@ -52,7 +55,7 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     bodyWriter.writeVarInt(definition.id);
     definition.packet.codec.encode(bodyWriter, packet);
     const frame = encodePacketFrame(bodyWriter.finish(), this.compressionThreshold);
-    this.socket.write(frame);
+    this.socket.write(this.cipher ? this.cipher.update(frame) : frame);
   }
 
   onPacket<T extends DripleafPacket>(packetType: PacketConstructor<T>, listener: PacketListener<T>) {
@@ -77,12 +80,18 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     this.emit("compressionThreshold", this.compressionThreshold);
   }
 
+  enableEncryption(sharedSecret: Uint8Array) {
+    this.cipher = createCipheriv("aes-128-cfb8", sharedSecret, sharedSecret);
+    this.decipher = createDecipheriv("aes-128-cfb8", sharedSecret, sharedSecret);
+  }
+
   disconnect() {
     this.socket.end();
   }
 
   private handleData(chunk: Uint8Array) {
-    this.buffer = concatBytes(this.buffer, chunk);
+    const decrypted = this.decipher ? this.decipher.update(chunk) : chunk;
+    this.buffer = concatBytes(this.buffer, decrypted);
 
     try {
       for (;;) {

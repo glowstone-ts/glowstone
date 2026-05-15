@@ -1,15 +1,15 @@
 import { EventEmitter } from "node:events"
 import { connect as tcpConnect } from "node:net"
-import { randomUUID } from "node:crypto"
+import { publicEncrypt, randomBytes, randomUUID, createPublicKey, constants } from "node:crypto"
 import type { UUID } from "node:crypto"
 import { resolveSrv } from "node:dns"
-import { Connection, State, ClientIntention, ChatVisibility, HumanoidArm, ParticleStatus, InteractionHand, PacketReader } from "@dripleaf/protocol"
+import { Connection, State, ClientIntention, ChatVisibility, HumanoidArm, ParticleStatus, InteractionHand, PacketReader, BlockFace } from "@dripleaf/protocol"
 import { handshake, login, play, configuration } from "@dripleaf/protocol"
 import type { GameProfile } from "@dripleaf/core"
 import { chatComponentFromNbt } from "@dripleaf/chat"
 import { World, ChunkData, ChunkSection, chunkKey, createLinearPalette, createSingletonPalette, createBiomePalette } from "@dripleaf/world"
 import type { Dimension, Palette } from "@dripleaf/world"
-import { EntityData, Vec3, decodeMetadata } from "@dripleaf/entity"
+import { EntityData, Vec3 as EntityVec3, decodeMetadata } from "@dripleaf/entity"
 import { Window } from "@dripleaf/inventory"
 import type { ItemStack } from "@dripleaf/inventory"
 import { BlockPos } from "@dripleaf/core"
@@ -274,22 +274,22 @@ export class Client {
 
   mine(x: number, y: number, z: number): void {
     if (!this.connection || !this.loggedIn) throw new Error("Not connected")
-    this.connection.write(new play.ServerboundPlayerActionPacket(
+      this.connection.write(new play.ServerboundPlayerActionPacket(
       play.PlayerAction.StartDestroyBlock,
       new BlockPos(x, y, z),
-      play.BlockFace.Up,
+      BlockFace.Up,
       this.sequence++
     ))
   }
 
-  blockInteract(x: number, y: number, z: number, face: play.BlockFace): void {
+  blockInteract(x: number, y: number, z: number, face: BlockFace): void {
     if (!this.connection || !this.loggedIn) throw new Error("Not connected")
     this.connection.write(new play.ServerboundUseItemOnPacket(
       InteractionHand.MainHand,
       {
         blockPos: new BlockPos(x, y, z),
         direction: face,
-        location: new Vec3(this.position.x, this.position.y, this.position.z),
+        location: { x: this.position.x, y: this.position.y, z: this.position.z } as any,
         inside: false,
         worldBorder: false,
       },
@@ -319,19 +319,27 @@ export class Client {
   private processPositionPacket(packet: play.ClientboundPlayerPositionPacket): void {
     const rel = packet.relatives
     const pos = packet.change.position
-    if (rel & 1) this.position.x += pos.x
+    if (rel & play.Relative.X) this.position.x += pos.x
     else this.position.x = pos.x
-    if (rel & 2) this.position.y += pos.y
+    if (rel & play.Relative.Y) this.position.y += pos.y
     else this.position.y = pos.y
-    if (rel & 4) this.position.z += pos.z
+    if (rel & play.Relative.Z) this.position.z += pos.z
     else this.position.z = pos.z
-    if (rel & 8) this.yaw += packet.change.yaw
+    if (rel & play.Relative.Yaw) this.yaw += packet.change.yaw
     else this.yaw = packet.change.yaw
-    if (rel & 16) this.pitch += packet.change.pitch
+    if (rel & play.Relative.Pitch) this.pitch += packet.change.pitch
     else this.pitch = packet.change.pitch
 
     this.connection!.write(new play.ServerboundAcceptTeleportationPacket(packet.teleportId))
     this.emit("move")
+  }
+
+  private processEntityPositionSync(packet: play.ClientboundEntityPositionSyncPacket): void {
+    const entity = this.entities.get(packet.entityId)
+    if (!entity) return
+    entity.position = new EntityVec3(packet.values.position.x, packet.values.position.y, packet.values.position.z)
+    entity.yaw = packet.values.yaw
+    entity.pitch = packet.values.pitch
   }
 
   private processRotationPacket(packet: play.ClientboundPlayerRotationPacket): void {
@@ -387,7 +395,7 @@ export class Client {
       packet.entityId,
       packet.entityUuid,
       packet.type,
-      new Vec3(packet.x, packet.y, packet.z),
+      new EntityVec3(packet.x, packet.y, packet.z),
       packet.yaw,
       packet.pitch,
       packet.headYaw,
@@ -462,6 +470,7 @@ export class Client {
       for (let i = 0; i < packet.slots.length; i++) {
         this.inventory.setSlot(i, packet.slots[i]!)
       }
+      this.inventory.setSlot(-1, packet.carriedItem)
     }
   }
 
@@ -470,6 +479,24 @@ export class Client {
       this.inventory.state = packet.stateId
       this.inventory.setSlot(packet.slot, packet.slotData)
     }
+  }
+
+  private processSetPlayerInventory(packet: play.ClientboundSetPlayerInventoryPacket): void {
+    if (packet.slot === -1) {
+      this.inventory.setSlot(-1, packet.contents as ItemStack)
+      return
+    }
+    this.inventory.setSlot(packet.slot, packet.contents as ItemStack)
+  }
+
+  private processStartConfiguration(): void {
+    const conn = this.connection!
+    conn.write(new play.ServerboundConfigurationAcknowledgedPacket())
+    conn.setState(State.Configuration)
+    conn.write(new configuration.ServerboundClientInformationPacket(
+      "en_us", 24, ChatVisibility.Full, true, 0,
+      HumanoidArm.Right, false, true, ParticleStatus.All,
+    ))
   }
 
   private processSetEquipment(packet: play.ClientboundSetEquipmentPacket): void {
@@ -504,12 +531,18 @@ export class Client {
 
     conn.onPacket(login.ClientboundLoginFinishedPacket, (packet: any) => {
       this.profile = packet.profile
-      conn.setState(State.Configuration)
+      conn.setState(State.Play)
       conn.write(new login.ServerboundLoginAcknowledgedPacket())
-      conn.write(new configuration.ServerboundClientInformationPacket(
-        "en_us", 24, ChatVisibility.Full, true, 0,
-        HumanoidArm.Right, false, true, ParticleStatus.All,
-      ))
+    })
+
+    conn.onPacket(login.ClientboundHelloPacket, (packet: login.ClientboundHelloPacket) => {
+      const sharedSecret = randomBytes(16)
+      const publicKey = createPublicKey({ key: Buffer.from(packet.publicKey), format: "der", type: "spki" })
+      const encryptedSecret = publicEncrypt({ key: publicKey, padding: constants.RSA_PKCS1_PADDING }, Buffer.from(sharedSecret))
+      const encryptedToken = publicEncrypt({ key: publicKey, padding: constants.RSA_PKCS1_PADDING }, Buffer.from(packet.verifyToken))
+
+      conn.write(new login.ServerboundKeyPacket(encryptedSecret, encryptedToken))
+      conn.enableEncryption(sharedSecret)
     })
 
     conn.onPacket(login.ClientboundLoginCompressionPacket, (packet: any) => {
@@ -530,9 +563,17 @@ export class Client {
       conn.setState(State.Play)
     })
 
+    conn.onPacket(play.ClientboundStartConfigurationPacket, () => {
+      this.processStartConfiguration()
+    })
+
     conn.onPacket(play.ClientboundLoginPacket, (packet: play.ClientboundLoginPacket) => {
       this.processLoginPacket(packet)
       conn.write(new play.ServerboundPlayerLoadedPacket())
+    })
+
+    conn.onPacket(play.ClientboundEntityPositionSyncPacket, (packet: play.ClientboundEntityPositionSyncPacket) => {
+      this.processEntityPositionSync(packet)
     })
 
     conn.onPacket(play.ClientboundPlayerPositionPacket, (packet: play.ClientboundPlayerPositionPacket) => {
@@ -608,6 +649,14 @@ export class Client {
       this.processContainerSlot(packet)
     })
 
+    conn.onPacket(play.ClientboundSetPlayerInventoryPacket, (packet: play.ClientboundSetPlayerInventoryPacket) => {
+      this.processSetPlayerInventory(packet)
+    })
+
+    conn.onPacket(play.ClientboundSetCursorItemPacket, (packet: play.ClientboundSetCursorItemPacket) => {
+      this.inventory.setSlot(-1, packet.contents)
+    })
+
     conn.onPacket(play.ClientboundSetEquipmentPacket, (packet: play.ClientboundSetEquipmentPacket) => {
       this.processSetEquipment(packet)
     })
@@ -626,6 +675,24 @@ export class Client {
 
     conn.onPacket(play.ClientboundPlayerRotationPacket, (packet: play.ClientboundPlayerRotationPacket) => {
       this.processRotationPacket(packet)
+    })
+
+    conn.onPacket(play.ClientboundPlayerInfoUpdatePacket, (packet: play.ClientboundPlayerInfoUpdatePacket) => {
+      for (const entry of packet.entries) {
+        if (entry.chatSession) {
+          conn.write(new play.ServerboundChatSessionUpdatePacket({
+            sessionId: entry.chatSession.uuid,
+            publicKey: {
+              expiresAt: {
+                seconds: entry.chatSession.publicKey.expireTime,
+                nanos: 0,
+              },
+              key: entry.chatSession.publicKey.keyBytes,
+              keySignature: entry.chatSession.publicKey.keySignature,
+            },
+          }))
+        }
+      }
     })
   }
 

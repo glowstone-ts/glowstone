@@ -13,6 +13,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@dripleaf/core": "workspace:*",
     "@dripleaf/chat": "workspace:*",
     "@dripleaf/inventory": "workspace:*",
     "@dripleaf/nbt": "workspace:*",
