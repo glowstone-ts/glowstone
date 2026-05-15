@@ -1,26 +1,15 @@
 import { EventEmitter } from "node:events"
 import { connect as tcpConnect } from "node:net"
-import { publicEncrypt, randomBytes, randomUUID, createPublicKey, constants } from "node:crypto"
-import type { UUID } from "node:crypto"
 import { resolveSrv } from "node:dns"
-import { Connection, State, ClientIntention, ChatVisibility, HumanoidArm, ParticleStatus, InteractionHand, PacketReader, BlockFace } from "@dripleaf/protocol"
-import { handshake, login, play, configuration } from "@dripleaf/protocol"
+import { Connection, State, InteractionHand, BlockFace, play } from "@dripleaf/protocol"
 import type { GameProfile } from "@dripleaf/core"
-import { chatComponentFromNbt } from "@dripleaf/chat"
-import { World, ChunkData, ChunkSection, chunkKey, createLinearPalette, createSingletonPalette, createBiomePalette } from "@dripleaf/world"
-import type { Dimension, Palette } from "@dripleaf/world"
-import { EntityData, Vec3 as EntityVec3, decodeMetadata } from "@dripleaf/entity"
-import { Window } from "@dripleaf/inventory"
-import type { ItemStack } from "@dripleaf/inventory"
 import { BlockPos } from "@dripleaf/core"
-
-type EquipmentEntry = {
-  slot: number
-  item: ItemStack
-}
-
-const MIN_SECTION_Y = -4
-const SECTION_COUNT = 24
+import { Window } from "@dripleaf/inventory"
+import { RegistryManager } from "@dripleaf/registry"
+import type { World } from "@dripleaf/world"
+import type { EntityData } from "@dripleaf/entity"
+import type { ClientContext, EquipmentEntry } from "./context"
+import { defaultPlugins, ConnectionPlugin } from "./plugins"
 
 type ClientEvents = {
   spawn: (packet: play.ClientboundLoginPacket) => void
@@ -28,7 +17,7 @@ type ClientEvents = {
   disconnect: (reason: string) => void
   error: (error: Error) => void
   end: () => void
-  packet: (packet: any) => void
+  packet: (packet: unknown) => void
   state: (state: State) => void
   move: () => void
   health: (health: number, food: number, saturation: number) => void
@@ -37,93 +26,11 @@ type ClientEvents = {
   entityDespawn: (entityId: number) => void
 }
 
-function swappedLongs(bytes: Uint8Array): Uint8Array {
-  const out = new Uint8Array(bytes.length)
-  for (let i = 0; i < bytes.length; i += 8) {
-    for (let j = 0; j < 8; j++) {
-      out[i + j] = bytes[i + 7 - j]!
-    }
-  }
-  return out
-}
-
-function createIdentityPalette(bpe: number): Palette {
-  return {
-    type: "linear",
-    getState(index: number): number {
-      return index
-    },
-    setState(_index: number, _value: number): void {},
-    addState(value: number): number {
-      return value
-    },
-    getIds(): number[] {
-      return []
-    },
-    bitsPerEntry(): number {
-      return bpe
-    },
-  }
-}
-
-function parseSections(data: Uint8Array, count: number): (ChunkSection | null)[] {
-  const reader = new PacketReader(data)
-  const sections: (ChunkSection | null)[] = []
-
-  for (let i = 0; i < count; i++) {
-    const section = new ChunkSection(MIN_SECTION_Y + i)
-
-    if (reader.remaining <= 0) {
-      sections.push(null)
-      continue
-    }
-
-    section.blockCount = reader.readUnsignedShort()
-    const bpe = reader.readUnsignedByte()
-
-    if (bpe === 0) {
-      const state = reader.readVarInt()
-      section.palette = createSingletonPalette(state)
-      section.states = new Uint8Array(0)
-    } else if (bpe <= 8) {
-      const paletteLen = reader.readVarInt()
-      const ids: number[] = []
-      for (let j = 0; j < paletteLen; j++) ids.push(reader.readVarInt())
-      section.palette = createLinearPalette(ids)
-      const dataLongs = reader.readVarInt()
-      const raw = reader.readBytes(dataLongs * 8)
-      section.states = swappedLongs(raw)
-    } else {
-      const dataLongs = reader.readVarInt()
-      const raw = reader.readBytes(dataLongs * 8)
-      section.palette = createIdentityPalette(bpe)
-      section.states = swappedLongs(raw)
-    }
-
-    const biomeBits = reader.readUnsignedByte()
-
-    if (biomeBits === 0) {
-      const biome = reader.readVarInt()
-      section.biomePalette = createSingletonPalette(biome)
-      section.biomes = new Uint8Array(0)
-    } else {
-      const paletteLen = reader.readVarInt()
-      const ids: number[] = []
-      for (let j = 0; j < paletteLen; j++) ids.push(reader.readVarInt())
-      section.biomePalette = createBiomePalette(ids)
-      const dataLongs = reader.readVarInt()
-      const raw = reader.readBytes(dataLongs * 8)
-      section.biomes = swappedLongs(raw)
-    }
-
-    sections.push(section)
-  }
-
-  return sections
-}
-
 export class Client {
-  private emitter: EventEmitter
+  private emitter = new EventEmitter()
+  private ctx: ClientContext
+  private connectionPlugin = new ConnectionPlugin()
+
   connection: Connection | null = null
   username: string
   profile: GameProfile | null = null
@@ -144,13 +51,54 @@ export class Client {
 
   inventory: Window
   heldItem = 0
-  private sequence = 0
   equipment: Map<number, EquipmentEntry[]> = new Map()
 
+  readonly registries = new RegistryManager()
+
   constructor(username: string) {
-    this.emitter = new EventEmitter()
     this.username = username
     this.inventory = new Window(0, "inventory", "Inventory", 46)
+    this.ctx = this.createContext()
+  }
+
+  private createContext(): ClientContext {
+    const client = this
+    return {
+      get username() { return client.username },
+      get connection() { return client.connection },
+      set connection(v) { client.connection = v },
+      get profile() { return client.profile },
+      set profile(v) { client.profile = v },
+      get loggedIn() { return client.loggedIn },
+      set loggedIn(v) { client.loggedIn = v },
+      get entityId() { return client.entityId },
+      set entityId(v) { client.entityId = v },
+      get position() { return client.position },
+      get yaw() { return client.yaw },
+      set yaw(v) { client.yaw = v },
+      get pitch() { return client.pitch },
+      set pitch(v) { client.pitch = v },
+      get onGround() { return client.onGround },
+      set onGround(v) { client.onGround = v },
+      get health() { return client.health },
+      set health(v) { client.health = v },
+      get food() { return client.food },
+      set food(v) { client.food = v },
+      get saturation() { return client.saturation },
+      set saturation(v) { client.saturation = v },
+      get world() { return client.world },
+      set world(v) { client.world = v },
+      get entities() { return client.entities },
+      get inventory() { return client.inventory },
+      get heldItem() { return client.heldItem },
+      set heldItem(v) { client.heldItem = v },
+      sequence: 0,
+      get equipment() { return client.equipment },
+      get registries() { return client.registries },
+      chunkBatchSize: 0,
+      emitter: this.emitter,
+      emit: (event, ...args) => client.emit(event, ...args),
+    }
   }
 
   on<K extends keyof ClientEvents>(event: K, listener: ClientEvents[K]): this {
@@ -163,7 +111,9 @@ export class Client {
     return this
   }
 
-  private srvHost: string | null = null
+  blockAt(pos: BlockPos) {
+    return this.world?.getBlock(pos)
+  }
 
   async connect(host: string, port = 25565): Promise<void> {
     const resolved = await this.resolveSrv(host, port)
@@ -171,7 +121,7 @@ export class Client {
       const socket = tcpConnect(resolved.port, resolved.host, () => {
         this.connection = new Connection(socket, false)
         this.setupHandlers()
-        this.startLogin(host, resolved.port)
+        this.connectionPlugin.startLogin(this.connection, host, resolved.port, this.username)
         resolve()
       })
       socket.on("error", reject)
@@ -180,18 +130,15 @@ export class Client {
   }
 
   private isIpAddress(host: string): boolean {
-    const ipv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/
-    const ipv6 = /^\[?([0-9a-fA-F:]+)\]?$/
-    return ipv4.test(host) || ipv6.test(host)
+    return /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || /^\[?([0-9a-fA-F:]+)\]?$/.test(host)
   }
 
   private resolveSrv(host: string, port: number): Promise<{ host: string; port: number }> {
     if (this.isIpAddress(host) || port !== 25565)
       return Promise.resolve({ host, port })
-
     return new Promise((resolve) => {
       resolveSrv(`_minecraft._tcp.${host}`, (err, records) => {
-        if (err || !records || records.length === 0) {
+        if (err || !records?.length) {
           resolve({ host, port })
           return
         }
@@ -257,9 +204,7 @@ export class Client {
     const dy = y - (this.position.y + 1.62)
     const dz = z - this.position.z
     const h = Math.sqrt(dx * dx + dz * dz)
-    const yaw = (-Math.atan2(dx, dz) * 180) / Math.PI
-    const pitch = (-Math.atan2(dy, h) * 180) / Math.PI
-    this.look(yaw, pitch)
+    this.look((-Math.atan2(dx, dz) * 180) / Math.PI, (-Math.atan2(dy, h) * 180) / Math.PI)
   }
 
   swingArm(hand: InteractionHand = InteractionHand.MainHand): void {
@@ -274,11 +219,11 @@ export class Client {
 
   mine(x: number, y: number, z: number): void {
     if (!this.connection || !this.loggedIn) throw new Error("Not connected")
-      this.connection.write(new play.ServerboundPlayerActionPacket(
+    this.connection.write(new play.ServerboundPlayerActionPacket(
       play.PlayerAction.StartDestroyBlock,
       new BlockPos(x, y, z),
       BlockFace.Up,
-      this.sequence++
+      this.ctx.sequence++,
     ))
   }
 
@@ -289,11 +234,11 @@ export class Client {
       {
         blockPos: new BlockPos(x, y, z),
         direction: face,
-        location: { x: this.position.x, y: this.position.y, z: this.position.z } as any,
+        location: { x: this.position.x, y: this.position.y, z: this.position.z } as { x: number; y: number; z: number },
         inside: false,
         worldBorder: false,
       },
-      this.sequence++,
+      this.ctx.sequence++,
     ))
   }
 
@@ -305,401 +250,10 @@ export class Client {
     this.emitter.emit(event, ...args)
   }
 
-  private processLoginPacket(packet: play.ClientboundLoginPacket): void {
-    this.entityId = packet.entityId
-    this.loggedIn = true
-    const dim: Dimension = {
-      type: packet.commonPlayerSpawnInfo.dimensionType,
-      identifier: packet.commonPlayerSpawnInfo.dimension.toString(),
-    }
-    this.world = new World(dim)
-    this.emit("spawn", packet)
-  }
-
-  private processPositionPacket(packet: play.ClientboundPlayerPositionPacket): void {
-    const rel = packet.relatives
-    const pos = packet.change.position
-    if (rel & play.Relative.X) this.position.x += pos.x
-    else this.position.x = pos.x
-    if (rel & play.Relative.Y) this.position.y += pos.y
-    else this.position.y = pos.y
-    if (rel & play.Relative.Z) this.position.z += pos.z
-    else this.position.z = pos.z
-    if (rel & play.Relative.Yaw) this.yaw += packet.change.yaw
-    else this.yaw = packet.change.yaw
-    if (rel & play.Relative.Pitch) this.pitch += packet.change.pitch
-    else this.pitch = packet.change.pitch
-
-    this.connection!.write(new play.ServerboundAcceptTeleportationPacket(packet.teleportId))
-    this.emit("move")
-  }
-
-  private processEntityPositionSync(packet: play.ClientboundEntityPositionSyncPacket): void {
-    const entity = this.entities.get(packet.entityId)
-    if (!entity) return
-    entity.position = new EntityVec3(packet.values.position.x, packet.values.position.y, packet.values.position.z)
-    entity.yaw = packet.values.yaw
-    entity.pitch = packet.values.pitch
-  }
-
-  private processRotationPacket(packet: play.ClientboundPlayerRotationPacket): void {
-    if (packet.relativeYaw) this.yaw += packet.yaw
-    else this.yaw = packet.yaw
-    if (packet.relativePitch) this.pitch += packet.pitch
-    else this.pitch = packet.pitch
-    this.emit("move")
-  }
-
-  private processHealthPacket(packet: play.ClientboundSetHealthPacket): void {
-    this.health = packet.health
-    this.food = packet.food
-    this.saturation = packet.saturation
-    this.emit("health", packet.health, packet.food, packet.saturation)
-  }
-
-  private processChunkPacket(packet: play.ClientboundLevelChunkWithLightPacket): void {
-    if (!this.world) return
-    const key = chunkKey(packet.x, packet.z)
-    let chunk = this.world.chunks.get(key)
-    if (!chunk) {
-      chunk = new ChunkData(packet.x, packet.z)
-      this.world.chunks.set(key, chunk)
-    }
-    const sections = parseSections(packet.chunkData.data, SECTION_COUNT)
-    for (let i = 0; i < SECTION_COUNT; i++) {
-      chunk.sections[i] = sections[i]!
-    }
-  }
-
-  private processBlockUpdate(packet: play.ClientboundBlockUpdatePacket): void {
-    if (!this.world) return
-    const p = packet.position
-    this.world.setBlock(new BlockPos(p.x, p.y, p.z), packet.blockState)
-  }
-
-  private processSectionBlocksUpdate(packet: play.ClientboundSectionBlocksUpdatePacket): void {
-    if (!this.world) return
-    for (const change of packet.blocks) {
-      const localX = change.position & 0xf
-      const localY = (change.position >> 8) & 0xf
-      const localZ = (change.position >> 4) & 0xf
-      const x = packet.sectionX * 16 + localX
-      const y = packet.sectionY * 16 + localY
-      const z = packet.sectionZ * 16 + localZ
-      this.world.setBlock(new BlockPos(x, y, z), change.blockStateId)
-    }
-  }
-
-  private processAddEntity(packet: play.ClientboundAddEntityPacket): void {
-    const entity = new EntityData(
-      packet.entityId,
-      packet.entityUuid,
-      packet.type,
-      new EntityVec3(packet.x, packet.y, packet.z),
-      packet.yaw,
-      packet.pitch,
-      packet.headYaw,
-      { x: (packet.movement as any).x, y: (packet.movement as any).y, z: (packet.movement as any).z },
-      new Map(),
-    )
-    this.entities.set(entity.id, entity)
-    if (this.world) this.world.addEntity(entity)
-    this.emit("entitySpawn", entity)
-  }
-
-  private processRemoveEntities(packet: play.ClientboundRemoveEntitiesPacket): void {
-    for (const id of packet.entityIds) {
-      this.entities.delete(id)
-      this.world?.removeEntity(id)
-      this.emit("entityDespawn", id)
-    }
-  }
-
-  private processSetEntityData(packet: play.ClientboundSetEntityDataPacket): void {
-    const entity = this.entities.get(packet.entityId)
-    if (!entity) return
-    const reader = new PacketReader(packet.packedItems)
-    entity.metadata = decodeMetadata(reader)
-  }
-
-  private processMoveEntityPos(packet: play.ClientboundMoveEntityPosPacket): void {
-    const entity = this.entities.get(packet.entityId)
-    if (!entity) return
-    entity.position.x += packet.deltaX / 4096
-    entity.position.y += packet.deltaY / 4096
-    entity.position.z += packet.deltaZ / 4096
-  }
-
-  private processMoveEntityPosRot(packet: play.ClientboundMoveEntityPosRotPacket): void {
-    const entity = this.entities.get(packet.entityId)
-    if (!entity) return
-    entity.position.x += packet.deltaX / 4096
-    entity.position.y += packet.deltaY / 4096
-    entity.position.z += packet.deltaZ / 4096
-    entity.yaw = packet.yaw
-    entity.pitch = packet.pitch
-  }
-
-  private processMoveEntityRot(packet: play.ClientboundMoveEntityRotPacket): void {
-    const entity = this.entities.get(packet.entityId)
-    if (!entity) return
-    entity.yaw = packet.yaw
-    entity.pitch = packet.pitch
-  }
-
-  private processTeleportEntity(packet: play.ClientboundTeleportEntityPacket): void {
-    const entity = this.entities.get(packet.id)
-    if (!entity) return
-    const change = packet.change
-    const rel = packet.relatives
-    if (rel.x) entity.position.x += change.position.x
-    else entity.position.x = change.position.x
-    if (rel.y) entity.position.y += change.position.y
-    else entity.position.y = change.position.y
-    if (rel.z) entity.position.z += change.position.z
-    else entity.position.z = change.position.z
-    if (rel.yRot) entity.yaw += change.yaw
-    else entity.yaw = change.yaw
-    if (rel.xRot) entity.pitch += change.pitch
-    else entity.pitch = change.pitch
-  }
-
-  private processContainerContent(packet: play.ClientboundContainerSetContentPacket): void {
-    if (packet.windowId === 0) {
-      this.inventory.state = packet.stateId
-      for (let i = 0; i < packet.slots.length; i++) {
-        this.inventory.setSlot(i, packet.slots[i]!)
-      }
-      this.inventory.setSlot(-1, packet.carriedItem)
-    }
-  }
-
-  private processContainerSlot(packet: play.ClientboundContainerSetSlotPacket): void {
-    if (packet.windowId === 0) {
-      this.inventory.state = packet.stateId
-      this.inventory.setSlot(packet.slot, packet.slotData)
-    }
-  }
-
-  private processSetPlayerInventory(packet: play.ClientboundSetPlayerInventoryPacket): void {
-    if (packet.slot === -1) {
-      this.inventory.setSlot(-1, packet.contents as ItemStack)
-      return
-    }
-    this.inventory.setSlot(packet.slot, packet.contents as ItemStack)
-  }
-
-  private processStartConfiguration(): void {
+  private setupHandlers(): void {
     const conn = this.connection!
-    conn.write(new play.ServerboundConfigurationAcknowledgedPacket())
-    conn.setState(State.Configuration)
-    conn.write(new configuration.ServerboundClientInformationPacket(
-      "en_us", 24, ChatVisibility.Full, true, 0,
-      HumanoidArm.Right, false, true, ParticleStatus.All,
-    ))
-  }
-
-  private processSetEquipment(packet: play.ClientboundSetEquipmentPacket): void {
-    this.equipment.set(packet.entityId, packet.slots as EquipmentEntry[])
-  }
-
-  private processHeldSlot(packet: play.ClientboundSetHeldSlotPacket): void {
-    this.heldItem = packet.slot
-    this.emit("heldItemChange", packet.slot)
-  }
-
-  private processRespawn(packet: play.ClientboundRespawnPacket): void {
-    if (!this.world) return
-    this.world.dimension = {
-      type: packet.commonPlayerSpawnInfo.dimensionType,
-      identifier: packet.commonPlayerSpawnInfo.dimension.toString(),
-    }
-  }
-
-  private processForgetChunk(packet: play.ClientboundForgetLevelChunkPacket): void {
-    if (!this.world) return
-    this.world.chunks.delete(chunkKey(packet.chunkPos.x, packet.chunkPos.z))
-  }
-
-  private setupHandlers() {
-    const conn = this.connection!
-
-    conn.on("packet", (packet: any) => this.emit("packet", packet))
-    conn.on("state", (state: State) => this.emit("state", state))
-    conn.on("error", (error: Error) => this.emit("error", error))
-    conn.on("end", () => this.emit("end"))
-
-    conn.onPacket(login.ClientboundLoginFinishedPacket, (packet: any) => {
-      this.profile = packet.profile
-      conn.setState(State.Play)
-      conn.write(new login.ServerboundLoginAcknowledgedPacket())
-    })
-
-    conn.onPacket(login.ClientboundHelloPacket, (packet: login.ClientboundHelloPacket) => {
-      const sharedSecret = randomBytes(16)
-      const publicKey = createPublicKey({ key: Buffer.from(packet.publicKey), format: "der", type: "spki" })
-      const encryptedSecret = publicEncrypt({ key: publicKey, padding: constants.RSA_PKCS1_PADDING }, Buffer.from(sharedSecret))
-      const encryptedToken = publicEncrypt({ key: publicKey, padding: constants.RSA_PKCS1_PADDING }, Buffer.from(packet.verifyToken))
-
-      conn.write(new login.ServerboundKeyPacket(encryptedSecret, encryptedToken))
-      conn.enableEncryption(sharedSecret)
-    })
-
-    conn.onPacket(login.ClientboundLoginCompressionPacket, (packet: any) => {
-      conn.setCompressionThreshold(packet.threshold)
-    })
-
-    conn.onPacket(login.ClientboundLoginDisconnectPacket, (packet: any) => {
-      this.emit("disconnect", JSON.stringify(packet.reason))
-    })
-
-    conn.onPacket(configuration.ClientboundDisconnectPacket, (packet: any) => {
-      this.emit("disconnect", chatComponentFromNbt(packet.reason))
-      conn.disconnect()
-    })
-
-    conn.onPacket(configuration.ClientboundFinishConfigurationPacket, () => {
-      conn.write(new configuration.ServerboundFinishConfigurationPacket())
-      conn.setState(State.Play)
-    })
-
-    conn.onPacket(play.ClientboundStartConfigurationPacket, () => {
-      this.processStartConfiguration()
-    })
-
-    conn.onPacket(play.ClientboundLoginPacket, (packet: play.ClientboundLoginPacket) => {
-      this.processLoginPacket(packet)
-      conn.write(new play.ServerboundPlayerLoadedPacket())
-    })
-
-    conn.onPacket(play.ClientboundEntityPositionSyncPacket, (packet: play.ClientboundEntityPositionSyncPacket) => {
-      this.processEntityPositionSync(packet)
-    })
-
-    conn.onPacket(play.ClientboundPlayerPositionPacket, (packet: play.ClientboundPlayerPositionPacket) => {
-      this.processPositionPacket(packet)
-    })
-
-    conn.onPacket(play.ClientboundSystemChatPacket, (packet: any) => {
-      const text = chatComponentFromNbt(packet.content)
-      this.emit("chat", text, null)
-    })
-
-    conn.onPacket(play.ClientboundPlayerChatPacket, (packet: play.ClientboundPlayerChatPacket) => {
-      const text = packet.unsignedContent
-        ? chatComponentFromNbt(packet.unsignedContent)
-        : packet.body.content
-      this.emit("chat", text, packet.sender)
-    })
-
-    conn.onPacket(play.ClientboundDisconnectPacket, (packet: any) => {
-      this.emit("disconnect", chatComponentFromNbt(packet.reason))
-      conn.disconnect()
-    })
-
-    conn.onPacket(play.ClientboundSetHealthPacket, (packet: play.ClientboundSetHealthPacket) => {
-      this.processHealthPacket(packet)
-    })
-
-    conn.onPacket(play.ClientboundLevelChunkWithLightPacket, (packet: play.ClientboundLevelChunkWithLightPacket) => {
-      this.processChunkPacket(packet)
-    })
-
-    conn.onPacket(play.ClientboundBlockUpdatePacket, (packet: play.ClientboundBlockUpdatePacket) => {
-      this.processBlockUpdate(packet)
-    })
-
-    conn.onPacket(play.ClientboundSectionBlocksUpdatePacket, (packet: play.ClientboundSectionBlocksUpdatePacket) => {
-      this.processSectionBlocksUpdate(packet)
-    })
-
-    conn.onPacket(play.ClientboundAddEntityPacket, (packet: play.ClientboundAddEntityPacket) => {
-      this.processAddEntity(packet)
-    })
-
-    conn.onPacket(play.ClientboundRemoveEntitiesPacket, (packet: play.ClientboundRemoveEntitiesPacket) => {
-      this.processRemoveEntities(packet)
-    })
-
-    conn.onPacket(play.ClientboundSetEntityDataPacket, (packet: play.ClientboundSetEntityDataPacket) => {
-      this.processSetEntityData(packet)
-    })
-
-    conn.onPacket(play.ClientboundMoveEntityPosPacket, (packet: play.ClientboundMoveEntityPosPacket) => {
-      this.processMoveEntityPos(packet)
-    })
-
-    conn.onPacket(play.ClientboundMoveEntityPosRotPacket, (packet: play.ClientboundMoveEntityPosRotPacket) => {
-      this.processMoveEntityPosRot(packet)
-    })
-
-    conn.onPacket(play.ClientboundMoveEntityRotPacket, (packet: play.ClientboundMoveEntityRotPacket) => {
-      this.processMoveEntityRot(packet)
-    })
-
-    conn.onPacket(play.ClientboundTeleportEntityPacket, (packet: play.ClientboundTeleportEntityPacket) => {
-      this.processTeleportEntity(packet)
-    })
-
-    conn.onPacket(play.ClientboundContainerSetContentPacket, (packet: play.ClientboundContainerSetContentPacket) => {
-      this.processContainerContent(packet)
-    })
-
-    conn.onPacket(play.ClientboundContainerSetSlotPacket, (packet: play.ClientboundContainerSetSlotPacket) => {
-      this.processContainerSlot(packet)
-    })
-
-    conn.onPacket(play.ClientboundSetPlayerInventoryPacket, (packet: play.ClientboundSetPlayerInventoryPacket) => {
-      this.processSetPlayerInventory(packet)
-    })
-
-    conn.onPacket(play.ClientboundSetCursorItemPacket, (packet: play.ClientboundSetCursorItemPacket) => {
-      this.inventory.setSlot(-1, packet.contents)
-    })
-
-    conn.onPacket(play.ClientboundSetEquipmentPacket, (packet: play.ClientboundSetEquipmentPacket) => {
-      this.processSetEquipment(packet)
-    })
-
-    conn.onPacket(play.ClientboundSetHeldSlotPacket, (packet: play.ClientboundSetHeldSlotPacket) => {
-      this.processHeldSlot(packet)
-    })
-
-    conn.onPacket(play.ClientboundRespawnPacket, (packet: play.ClientboundRespawnPacket) => {
-      this.processRespawn(packet)
-    })
-
-    conn.onPacket(play.ClientboundForgetLevelChunkPacket, (packet: play.ClientboundForgetLevelChunkPacket) => {
-      this.processForgetChunk(packet)
-    })
-
-    conn.onPacket(play.ClientboundPlayerRotationPacket, (packet: play.ClientboundPlayerRotationPacket) => {
-      this.processRotationPacket(packet)
-    })
-
-    conn.onPacket(play.ClientboundPlayerInfoUpdatePacket, (packet: play.ClientboundPlayerInfoUpdatePacket) => {
-      for (const entry of packet.entries) {
-        if (entry.chatSession) {
-          conn.write(new play.ServerboundChatSessionUpdatePacket({
-            sessionId: entry.chatSession.uuid,
-            publicKey: {
-              expiresAt: {
-                seconds: entry.chatSession.publicKey.expireTime,
-                nanos: 0,
-              },
-              key: entry.chatSession.publicKey.keyBytes,
-              keySignature: entry.chatSession.publicKey.keySignature,
-            },
-          }))
-        }
-      }
-    })
-  }
-
-  private startLogin(host: string, port: number) {
-    const conn = this.connection!
-    conn.write(new handshake.ServerboundIntentionPacket(775, host, port, ClientIntention.Login))
-    conn.setState(State.Login)
-    conn.write(new login.ServerboundHelloPacket(this.username, randomUUID() as UUID))
+    this.connectionPlugin.register(this.ctx, conn)
+    for (const plugin of defaultPlugins)
+      plugin.register(this.ctx, conn)
   }
 }
