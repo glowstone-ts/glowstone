@@ -88,15 +88,15 @@ async function runTest() {
       assert(packet.profile.name === "DripleafOnTop", "login finished correct name");
       client.setState(State.Configuration);
       client.write(new ServerboundLoginAcknowledgedPacket());
+      client.write(new ServerboundClientInformationPacket(
+        "en_us", 24, ChatVisibility.Full, true, 0,
+        HumanoidArm.Right, false, true, ParticleStatus.All,
+      ));
     }
 
     if (packet instanceof ClientboundFinishConfigurationPacket) {
       client.write(new ServerboundFinishConfigurationPacket());
       client.setState(State.Play);
-      client.write(new ServerboundClientInformationPacket(
-        "en_us", 24, ChatVisibility.Full, true, 0,
-        HumanoidArm.Right, false, true, ParticleStatus.All,
-      ));
     }
   });
 

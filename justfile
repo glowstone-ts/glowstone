@@ -16,5 +16,8 @@ ping:
 test:
     bun run test_local.ts
 
+test-integration host="127.0.0.1" port="25565":
+    bun run test_integration.ts {{host}} {{port}}
+
 check:
     npx tsc --noEmit
