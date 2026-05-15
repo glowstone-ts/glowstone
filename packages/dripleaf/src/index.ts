@@ -1,2 +1,5 @@
 export { Client } from "./Client"
-export type { GameProfile, BlockPos, ChunkPos, GlobalPos } from "@dripleaf/core"
+export type { GameProfile } from "@dripleaf/core"
+export { BlockPos, ChunkPos, GlobalPos } from "@dripleaf/core"
+export * from "@dripleaf/item"
+export * from "@dripleaf/recipe"

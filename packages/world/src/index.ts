@@ -1,9 +1,9 @@
 import { BlockPos, ChunkPos } from "@dripleaf/core"
 import { type BlockData, stateToBlock } from "@dripleaf/block"
 import { type EntityData } from "@dripleaf/entity"
-import { DimensionType, DimensionTypeRegistry } from "@dripleaf/registry"
+import { DimensionType, DimensionTypeRegistry, WorldgenBiome, WorldgenBiomeRegistry } from "@dripleaf/registry"
 
-export { DimensionType, DimensionTypeRegistry }
+export { DimensionType, DimensionTypeRegistry, WorldgenBiome, WorldgenBiomeRegistry }
 
 const SECTION_SIZE = 4096
 const BIOME_COUNT = 64

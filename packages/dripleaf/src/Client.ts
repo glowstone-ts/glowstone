@@ -144,6 +144,7 @@ export class Client {
 
   inventory: Window
   heldItem = 0
+  private sequence = 0
   equipment: Map<number, EquipmentEntry[]> = new Map()
 
   constructor(username: string) {
@@ -264,6 +265,36 @@ export class Client {
   swingArm(hand: InteractionHand = InteractionHand.MainHand): void {
     if (!this.connection || !this.loggedIn) throw new Error("Not connected")
     this.connection.write(new play.ServerboundSwingPacket(hand))
+  }
+
+  attack(entityId: number): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundAttackPacket(entityId))
+  }
+
+  mine(x: number, y: number, z: number): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundPlayerActionPacket(
+      play.PlayerAction.StartDestroyBlock,
+      new BlockPos(x, y, z),
+      play.BlockFace.Up,
+      this.sequence++
+    ))
+  }
+
+  blockInteract(x: number, y: number, z: number, face: play.BlockFace): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundUseItemOnPacket(
+      InteractionHand.MainHand,
+      {
+        blockPos: new BlockPos(x, y, z),
+        direction: face,
+        location: new Vec3(this.position.x, this.position.y, this.position.z),
+        inside: false,
+        worldBorder: false,
+      },
+      this.sequence++,
+    ))
   }
 
   disconnect(): void {
