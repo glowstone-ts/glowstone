@@ -16,7 +16,7 @@ export class EntityPlugin implements ClientPlugin {
         packet.yaw,
         packet.pitch,
         packet.headYaw,
-        { x: (packet.movement as { x: number }).x, y: (packet.movement as { y: number }).y, z: (packet.movement as { z: number }).z },
+        new Vec3(packet.movement.x, packet.movement.y, packet.movement.z),
         new Map(),
       )
       ctx.entities.set(entity.id, entity)

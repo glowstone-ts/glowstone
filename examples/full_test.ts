@@ -55,7 +55,7 @@ bot.on("move", () => {
   moveReceived = true
 })
 
-bot.on("chat", (message, sender) => {
+bot.on("chat", (sender, message) => {
   chatReceived = true
   const senderName = sender ? toPlainText(sender) : "server"
   console.log(`  chat from ${senderName}: ${toPlainText(message)}`)

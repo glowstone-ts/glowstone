@@ -92,7 +92,7 @@ export class EntityData {
     public yaw: number,
     public pitch: number,
     public headYaw: number,
-    public velocity: { x: number; y: number; z: number },
+    public velocity: Vec3,
     public metadata: Map<number, MetadataEntry>,
   ) {}
 }
