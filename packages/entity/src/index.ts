@@ -1,4 +1,4 @@
-import { EntityType, ItemType } from "@dripleaf/registry"
+import { DataComponentType, EntityType, ItemType } from "@dripleaf/registry"
 import { PacketReader, PacketWriter, Codecs } from "@dripleaf/protocol"
 import { BlockPos, GlobalPos } from "@dripleaf/core"
 
@@ -26,23 +26,36 @@ export enum MetadataType {
   Position = 10,
   OptionalPosition = 11,
   Direction = 12,
-  OptionalUUID = 13,
+  OptionalLivingEntityReference = 13,
   BlockState = 14,
   OptionalBlockState = 15,
-  Nbt = 16,
-  Particle = 17,
+  Particle = 16,
+  Particles = 17,
   VillagerData = 18,
-  OptionalVarInt = 19,
+  OptionalUnsignedInt = 19,
   Pose = 20,
   CatVariant = 21,
-  WolfVariant = 22,
-  FrogVariant = 23,
-  OptionalGlobalPos = 24,
-  PaintingVariant = 25,
-  SnifferState = 30,
-  ArmadilloState = 31,
-  Vector3 = 32,
-  Quaternion = 33,
+  CatSoundVariant = 22,
+  CowVariant = 23,
+  CowSoundVariant = 24,
+  WolfVariant = 25,
+  WolfSoundVariant = 26,
+  FrogVariant = 27,
+  PigVariant = 28,
+  PigSoundVariant = 29,
+  ChickenVariant = 30,
+  ChickenSoundVariant = 31,
+  ZombieNautilusVariant = 32,
+  OptionalGlobalPos = 33,
+  PaintingVariant = 34,
+  SnifferState = 35,
+  ArmadilloState = 36,
+  CopperGolemState = 37,
+  WeatheringCopperState = 38,
+  Vector3 = 39,
+  Quaternion = 40,
+  ResolvableProfile = 41,
+  HumanoidArm = 42,
 }
 
 export type MetadataEntry = {
@@ -88,12 +101,19 @@ export function decodeMetadata(reader: PacketReader): Map<number, MetadataEntry>
   const metadata = new Map<number, MetadataEntry>()
 
   while (reader.remaining > 0) {
+    const entryOffset = reader.offset
     const index = reader.readUnsignedByte()
 
     if (index === 0xff) break
 
     const type = reader.readVarInt() as MetadataType
-    const value = readMetadataValue(reader, type)
+    let value: unknown
+    try {
+      value = readMetadataValue(reader, type)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      throw new Error(`${message} at metadata offset ${entryOffset}, index ${index}, remaining ${reader.remaining}`)
+    }
 
     metadata.set(index, { index, type, value })
   }
@@ -122,7 +142,7 @@ function readMetadataValue(reader: PacketReader, type: MetadataType): unknown {
       return reader.readNbt()
 
     case MetadataType.OptionalChat:
-      return reader.readOptionalNbt()
+      return reader.readPrefixedOptional(() => reader.readNbt())
 
     case MetadataType.Slot: {
       const count = reader.readVarInt()
@@ -149,9 +169,9 @@ function readMetadataValue(reader: PacketReader, type: MetadataType): unknown {
     case MetadataType.Direction:
       return reader.readVarInt()
 
-    case MetadataType.OptionalUUID: {
+    case MetadataType.OptionalLivingEntityReference: {
       const present = reader.readBoolean()
-      return present ? reader.readUUID() : null
+      return present ? reader.readVarInt() : null
     }
 
     case MetadataType.BlockState:
@@ -162,32 +182,41 @@ function readMetadataValue(reader: PacketReader, type: MetadataType): unknown {
       return state === -1 ? null : state
     }
 
-    case MetadataType.Nbt:
-      return reader.readNbt()
-
     case MetadataType.Particle: {
-      const particleId = reader.readVarInt()
-      return { id: particleId }
+      return readParticle(reader)
+    }
+
+    case MetadataType.Particles: {
+      return reader.readArray(() => readParticle(reader))
     }
 
     case MetadataType.VillagerData:
       return [reader.readVarInt(), reader.readVarInt(), reader.readVarInt()] as [number, number, number]
 
-    case MetadataType.OptionalVarInt: {
+    case MetadataType.OptionalUnsignedInt: {
       const value = reader.readVarInt()
-      return value === 0 ? null : value
+      return value === 0 ? null : value - 1
     }
 
     case MetadataType.Pose:
-      return reader.readVarInt()
-
     case MetadataType.CatVariant:
-      return reader.readVarInt()
-
+    case MetadataType.CatSoundVariant:
+    case MetadataType.CowVariant:
+    case MetadataType.CowSoundVariant:
     case MetadataType.WolfVariant:
-      return reader.readVarInt()
-
+    case MetadataType.WolfSoundVariant:
     case MetadataType.FrogVariant:
+    case MetadataType.PigVariant:
+    case MetadataType.PigSoundVariant:
+    case MetadataType.ChickenVariant:
+    case MetadataType.ChickenSoundVariant:
+    case MetadataType.ZombieNautilusVariant:
+    case MetadataType.PaintingVariant:
+    case MetadataType.SnifferState:
+    case MetadataType.ArmadilloState:
+    case MetadataType.CopperGolemState:
+    case MetadataType.WeatheringCopperState:
+    case MetadataType.HumanoidArm:
       return reader.readVarInt()
 
     case MetadataType.OptionalGlobalPos: {
@@ -198,24 +227,22 @@ function readMetadataValue(reader: PacketReader, type: MetadataType): unknown {
       return new GlobalPos(dimension, pos)
     }
 
-    case MetadataType.PaintingVariant:
-      return reader.readVarInt()
-
-    case MetadataType.SnifferState:
-      return reader.readVarInt()
-
-    case MetadataType.ArmadilloState:
-      return reader.readVarInt()
-
     case MetadataType.Vector3:
       return new Vec3(reader.readFloat(), reader.readFloat(), reader.readFloat())
 
     case MetadataType.Quaternion:
       return [reader.readFloat(), reader.readFloat(), reader.readFloat(), reader.readFloat()] as [number, number, number, number]
 
+    case MetadataType.ResolvableProfile:
+      return reader.readNbt()
+
     default:
       throw new Error(`Unknown metadata type: ${type}`)
   }
+}
+
+function readParticle(reader: PacketReader): { id: number } {
+  return { id: reader.readVarInt() }
 }
 
 export function encodeMetadata(writer: PacketWriter, metadata: Map<number, MetadataEntry>): void {
@@ -257,7 +284,7 @@ function writeMetadataValue(writer: PacketWriter, entry: MetadataEntry): void {
       break
 
     case MetadataType.OptionalChat:
-      writer.writeOptionalNbt(value as any)
+      writer.writePrefixedOptional(value as any, (entry) => writer.writeNbt(entry))
       break
 
     case MetadataType.Slot: {
@@ -299,10 +326,10 @@ function writeMetadataValue(writer: PacketWriter, entry: MetadataEntry): void {
       writer.writeVarInt(value as number)
       break
 
-    case MetadataType.OptionalUUID: {
-      const uuid = value as string | null
-      writer.writeBoolean(uuid != null)
-      if (uuid != null) writer.writeUUID(uuid)
+    case MetadataType.OptionalLivingEntityReference: {
+      const entityId = value as number | null
+      writer.writeBoolean(entityId != null)
+      if (entityId != null) writer.writeVarInt(entityId)
       break
     }
 
@@ -316,13 +343,15 @@ function writeMetadataValue(writer: PacketWriter, entry: MetadataEntry): void {
       break
     }
 
-    case MetadataType.Nbt:
-      writer.writeNbt(value as any)
-      break
-
     case MetadataType.Particle: {
       const particle = value as { id: number }
       writer.writeVarInt(particle.id)
+      break
+    }
+
+    case MetadataType.Particles: {
+      const particles = value as { id: number }[]
+      writer.writeArray(particles, (particle) => writer.writeVarInt(particle.id))
       break
     }
 
@@ -334,25 +363,31 @@ function writeMetadataValue(writer: PacketWriter, entry: MetadataEntry): void {
       break
     }
 
-    case MetadataType.OptionalVarInt: {
+    case MetadataType.OptionalUnsignedInt: {
       const val = value as number | null
-      writer.writeVarInt(val ?? 0)
+      writer.writeVarInt(val == null ? 0 : val + 1)
       break
     }
 
     case MetadataType.Pose:
-      writer.writeVarInt(value as number)
-      break
-
     case MetadataType.CatVariant:
-      writer.writeVarInt(value as number)
-      break
-
+    case MetadataType.CatSoundVariant:
+    case MetadataType.CowVariant:
+    case MetadataType.CowSoundVariant:
     case MetadataType.WolfVariant:
-      writer.writeVarInt(value as number)
-      break
-
+    case MetadataType.WolfSoundVariant:
     case MetadataType.FrogVariant:
+    case MetadataType.PigVariant:
+    case MetadataType.PigSoundVariant:
+    case MetadataType.ChickenVariant:
+    case MetadataType.ChickenSoundVariant:
+    case MetadataType.ZombieNautilusVariant:
+    case MetadataType.PaintingVariant:
+    case MetadataType.SnifferState:
+    case MetadataType.ArmadilloState:
+    case MetadataType.CopperGolemState:
+    case MetadataType.WeatheringCopperState:
+    case MetadataType.HumanoidArm:
       writer.writeVarInt(value as number)
       break
 
@@ -366,16 +401,8 @@ function writeMetadataValue(writer: PacketWriter, entry: MetadataEntry): void {
       break
     }
 
-    case MetadataType.PaintingVariant:
-      writer.writeVarInt(value as number)
-      break
-
-    case MetadataType.SnifferState:
-      writer.writeVarInt(value as number)
-      break
-
-    case MetadataType.ArmadilloState:
-      writer.writeVarInt(value as number)
+    case MetadataType.ResolvableProfile:
+      writer.writeNbt(value as any)
       break
 
     case MetadataType.Vector3: {
@@ -406,13 +433,13 @@ function readDataComponentPatch(reader: PacketReader): Record<string, unknown> {
   const negativeCount = reader.readVarInt()
 
   for (let i = 0; i < positiveCount; i++) {
-    const type = Codecs.varIntEnum(ItemType).decode(reader) as string
+    const type = Codecs.varIntEnum(DataComponentType).decode(reader) as string
     const nbt = reader.readNbt()
     patch[type] = nbtValueToPlain(nbt.value)
   }
 
   for (let i = 0; i < negativeCount; i++) {
-    const type = Codecs.varIntEnum(ItemType).decode(reader) as string
+    const type = Codecs.varIntEnum(DataComponentType).decode(reader) as string
     patch[type] = null
   }
 
@@ -428,7 +455,7 @@ function writeDataComponentPatch(writer: PacketWriter, patch: Record<string, unk
   writer.writeVarInt(negative.length)
 
   for (const [key, val] of positive) {
-    Codecs.varIntEnum(ItemType).encode(writer, key as any)
+    Codecs.varIntEnum(DataComponentType).encode(writer, key as any)
     writer.writeNbt({
       type: 10,
       value: plainToNbtValue(val),
@@ -436,7 +463,7 @@ function writeDataComponentPatch(writer: PacketWriter, patch: Record<string, unk
   }
 
   for (const [key] of negative) {
-    Codecs.varIntEnum(ItemType).encode(writer, key as any)
+    Codecs.varIntEnum(DataComponentType).encode(writer, key as any)
   }
 }
 

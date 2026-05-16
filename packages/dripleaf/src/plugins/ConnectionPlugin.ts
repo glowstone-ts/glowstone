@@ -15,7 +15,7 @@ export class ConnectionPlugin implements ClientPlugin {
 
     conn.onPacket(login.ClientboundLoginFinishedPacket, (packet) => {
       ctx.profile = packet.profile
-      conn.setState(State.Play)
+      conn.setState(State.Configuration)
       conn.write(new login.ServerboundLoginAcknowledgedPacket())
     })
 
