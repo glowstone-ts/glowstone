@@ -6,8 +6,48 @@ export const BIOME_COUNT = 64
 export const MIN_SECTION_Y = -4
 export const SECTION_COUNT = 24
 
-export function chunkKey(x: number, z: number): number {
-  return (x * 31 + z) | 0
+export type ChunkKey = `${number},${number}`
+
+export interface ChunkDimensionConfig {
+  minY: number
+  height: number
+  sectionCount: number
+  minSectionY: number
+}
+
+export const OVERWORLD_CHUNK_CONFIG: ChunkDimensionConfig = {
+  minY: MIN_SECTION_Y * 16,
+  height: SECTION_COUNT * 16,
+  sectionCount: SECTION_COUNT,
+  minSectionY: MIN_SECTION_Y,
+}
+
+export type HeightmapType =
+  | "WORLD_SURFACE"
+  | "MOTION_BLOCKING"
+  | "MOTION_BLOCKING_NO_LEAVES"
+  | "OCEAN_FLOOR"
+
+const HEIGHTMAP_TYPES: HeightmapType[] = [
+  "WORLD_SURFACE",
+  "MOTION_BLOCKING",
+  "MOTION_BLOCKING_NO_LEAVES",
+  "OCEAN_FLOOR",
+]
+
+export function chunkKey(x: number, z: number): ChunkKey {
+  return `${x},${z}`
+}
+
+export function parseChunkKey(key: ChunkKey): { x: number; z: number } {
+  const [x, z, extra] = key.split(",")
+  if (x === undefined || z === undefined || extra !== undefined)
+    throw new Error(`invalid chunk key: ${key}`)
+  const parsedX = Number(x)
+  const parsedZ = Number(z)
+  if (!Number.isFinite(parsedX) || !Number.isFinite(parsedZ))
+    throw new Error(`invalid chunk key: ${key}`)
+  return { x: parsedX, z: parsedZ }
 }
 
 export function posToIndex(x: number, y: number, z: number): number {
@@ -238,19 +278,21 @@ export class ChunkSection {
 export class ChunkData {
   x: number
   z: number
+  config: ChunkDimensionConfig
   sections: (ChunkSection | null)[]
-  heightmaps: Record<string, Uint8Array>
+  heightmaps: HeightmapSet
 
-  constructor(x: number, z: number) {
+  constructor(x: number, z: number, config: ChunkDimensionConfig = OVERWORLD_CHUNK_CONFIG, heightmaps?: HeightmapSet) {
     this.x = x
     this.z = z
-    this.sections = new Array(SECTION_COUNT).fill(null)
-    this.heightmaps = {}
+    this.config = config
+    this.sections = new Array(config.sectionCount).fill(null)
+    this.heightmaps = heightmaps ?? createHeightmapSet()
   }
 
   getBlock(pos: BlockPos): number | undefined {
     const sectionY = Math.floor(pos.y / 16)
-    const sectionIndex = sectionY - MIN_SECTION_Y
+    const sectionIndex = sectionY - this.config.minSectionY
     if (sectionIndex < 0 || sectionIndex >= this.sections.length)
       return undefined
     const section = this.sections[sectionIndex]
@@ -260,7 +302,7 @@ export class ChunkData {
 
   getBiome(pos: BlockPos): number | undefined {
     const sectionY = Math.floor(pos.y / 16)
-    const sectionIndex = sectionY - MIN_SECTION_Y
+    const sectionIndex = sectionY - this.config.minSectionY
     if (sectionIndex < 0 || sectionIndex >= this.sections.length)
       return undefined
     const section = this.sections[sectionIndex]
@@ -270,16 +312,145 @@ export class ChunkData {
 
   setBlock(pos: BlockPos, state: number): void {
     const sectionY = Math.floor(pos.y / 16)
-    const sectionIndex = sectionY - MIN_SECTION_Y
+    const sectionIndex = sectionY - this.config.minSectionY
     if (sectionIndex < 0 || sectionIndex >= this.sections.length)
       return
+    const oldState = this.getBlock(pos) ?? 0
     let section = this.sections[sectionIndex]
     if (!section) {
       section = new ChunkSection(sectionY)
       this.sections[sectionIndex] = section
     }
     section.setBlock(pos.x & 0xf, pos.y & 0xf, pos.z & 0xf, state)
+    this.updateHeightmaps(pos, oldState, state)
   }
+
+  getHeight(type: HeightmapType, x: number, z: number): number | undefined {
+    return this.heightmaps.get(type, x & 0xf, z & 0xf)
+  }
+
+  private updateHeightmaps(pos: BlockPos, oldState: number, state: number): void {
+    if (oldState === state) return
+    const localX = pos.x & 0xf
+    const localZ = pos.z & 0xf
+    for (const type of HEIGHTMAP_TYPES) {
+      const current = this.heightmaps.get(type, localX, localZ)
+      if (state !== 0 && (current === undefined || pos.y > current)) {
+        this.heightmaps.set(type, localX, localZ, pos.y)
+        continue
+      }
+      if (oldState !== 0 && state === 0 && current === pos.y) {
+        const next = this.findHighestBlock(localX, localZ)
+        if (next === undefined) this.heightmaps.delete(type, localX, localZ)
+        else this.heightmaps.set(type, localX, localZ, next)
+      }
+    }
+  }
+
+  private findHighestBlock(localX: number, localZ: number): number | undefined {
+    for (let sectionIndex = this.sections.length - 1; sectionIndex >= 0; sectionIndex--) {
+      const section = this.sections[sectionIndex]
+      if (!section || section.blockCount === 0) continue
+      for (let localY = 15; localY >= 0; localY--) {
+        if (section.getBlock(localX, localY, localZ) !== 0)
+          return (section.y * 16) + localY
+      }
+    }
+    return undefined
+  }
+}
+
+export interface HeightmapSet {
+  get(type: HeightmapType, x: number, z: number): number | undefined
+  set(type: HeightmapType, x: number, z: number, y: number): void
+  delete(type: HeightmapType, x: number, z: number): void
+}
+
+class MutableHeightmapSet implements HeightmapSet {
+  readonly #maps = new Map<HeightmapType, Int32Array>()
+  readonly #present = new Map<HeightmapType, Uint8Array>()
+
+  constructor(entries?: Partial<Record<HeightmapType, ArrayLike<number>>>) {
+    for (const [type, values] of Object.entries(entries ?? {}) as [HeightmapType, ArrayLike<number>][]) {
+      const map = new Int32Array(256)
+      const present = new Uint8Array(256)
+      for (let i = 0; i < Math.min(256, values.length); i++) {
+        map[i] = values[i]!
+        present[i] = 1
+      }
+      this.#maps.set(type, map)
+      this.#present.set(type, present)
+    }
+  }
+
+  get(type: HeightmapType, x: number, z: number): number | undefined {
+    const index = ((z & 0xf) << 4) | (x & 0xf)
+    if (!this.#present.get(type)?.[index]) return undefined
+    return this.#maps.get(type)?.[index]
+  }
+
+  set(type: HeightmapType, x: number, z: number, y: number): void {
+    const index = ((z & 0xf) << 4) | (x & 0xf)
+    let map = this.#maps.get(type)
+    if (!map) {
+      map = new Int32Array(256)
+      this.#maps.set(type, map)
+    }
+    let present = this.#present.get(type)
+    if (!present) {
+      present = new Uint8Array(256)
+      this.#present.set(type, present)
+    }
+    map[index] = y
+    present[index] = 1
+  }
+
+  delete(type: HeightmapType, x: number, z: number): void {
+    const index = ((z & 0xf) << 4) | (x & 0xf)
+    const present = this.#present.get(type)
+    if (present) present[index] = 0
+  }
+}
+
+export function createHeightmapSet(entries?: Partial<Record<HeightmapType, ArrayLike<number>>>): HeightmapSet {
+  return new MutableHeightmapSet(entries)
+}
+
+export type ChunkHeightmapEntry = {
+  type: number | string
+  data: bigint[] | number[]
+}
+
+function readHeightmapEntry(entry: ChunkHeightmapEntry): [HeightmapType, number[]] | undefined {
+  const type = typeof entry.type === "string"
+    ? entry.type
+    : HEIGHTMAP_TYPES[entry.type]
+  if (!type || !HEIGHTMAP_TYPES.includes(type as HeightmapType))
+    return undefined
+  const words = entry.data.map(BigInt)
+  const values: number[] = []
+  const bitsPerEntry = 9
+  const mask = (1n << BigInt(bitsPerEntry)) - 1n
+  for (let i = 0; i < 256; i++) {
+    const bitIndex = i * bitsPerEntry
+    const wordIndex = Math.floor(bitIndex / 64)
+    const bitOffset = bitIndex % 64
+    let value = (words[wordIndex] ?? 0n) >> BigInt(bitOffset)
+    const spill = bitOffset + bitsPerEntry - 64
+    if (spill > 0)
+      value |= (words[wordIndex + 1] ?? 0n) << BigInt(bitsPerEntry - spill)
+    values.push(Number(value & mask))
+  }
+  return [type as HeightmapType, values]
+}
+
+export function parseHeightmaps(entries: ChunkHeightmapEntry[] = []): HeightmapSet {
+  const parsed: Partial<Record<HeightmapType, number[]>> = {}
+  for (const entry of entries) {
+    const heightmap = readHeightmapEntry(entry)
+    if (heightmap) parsed[heightmap[0]] = heightmap[1]
+  }
+  return createHeightmapSet(parsed)
 }
 
 export function swappedLongs(bytes: Uint8Array): Uint8Array {
@@ -310,12 +481,12 @@ function createIdentityPalette(bpe: number): Palette {
   }
 }
 
-export function parseChunkSections(data: Uint8Array, count = SECTION_COUNT): (ChunkSection | null)[] {
+export function parseChunkSections(data: Uint8Array, count = SECTION_COUNT, minSectionY = MIN_SECTION_Y): (ChunkSection | null)[] {
   const reader = new PacketReader(data)
   const sections: (ChunkSection | null)[] = []
 
   for (let i = 0; i < count; i++) {
-    const section = new ChunkSection(MIN_SECTION_Y + i)
+    const section = new ChunkSection(minSectionY + i)
 
     if (reader.remaining <= 0) {
       sections.push(null)
@@ -362,14 +533,25 @@ export function parseChunkSections(data: Uint8Array, count = SECTION_COUNT): (Ch
   return sections
 }
 
-export function applyLevelChunk(chunks: Map<number, ChunkData>, x: number, z: number, data: Uint8Array): void {
+export function applyLevelChunk(
+  chunks: Map<ChunkKey, ChunkData>,
+  x: number,
+  z: number,
+  data: Uint8Array,
+  config: ChunkDimensionConfig = OVERWORLD_CHUNK_CONFIG,
+  heightmaps?: ChunkHeightmapEntry[],
+): void {
   const key = chunkKey(x, z)
   let chunk = chunks.get(key)
   if (!chunk) {
-    chunk = new ChunkData(x, z)
+    chunk = new ChunkData(x, z, config)
     chunks.set(key, chunk)
   }
-  const sections = parseChunkSections(data, SECTION_COUNT)
-  for (let i = 0; i < SECTION_COUNT; i++)
+  chunk.config = config
+  if (chunk.sections.length !== config.sectionCount)
+    chunk.sections = new Array(config.sectionCount).fill(null)
+  chunk.heightmaps = parseHeightmaps(heightmaps)
+  const sections = parseChunkSections(data, config.sectionCount, config.minSectionY)
+  for (let i = 0; i < config.sectionCount; i++)
     chunk.sections[i] = sections[i]!
 }

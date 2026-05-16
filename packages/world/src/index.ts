@@ -1,7 +1,7 @@
 import { BlockPos, ChunkPos } from "@dripleaf/core"
 import { type BlockData, stateToBlock } from "@dripleaf/block"
 import type { EntityData } from "@dripleaf/entity"
-import { ChunkData, chunkKey } from "@dripleaf/chunk"
+import { ChunkData, type ChunkKey, type HeightmapType, chunkKey } from "@dripleaf/chunk"
 import { DimensionType, DimensionTypeRegistry, WorldgenBiome, WorldgenBiomeRegistry } from "@dripleaf/registry"
 
 export {
@@ -10,7 +10,9 @@ export {
   SECTION_COUNT,
   SECTION_SIZE,
   BIOME_COUNT,
+  OVERWORLD_CHUNK_CONFIG,
   MIN_SECTION_Y,
+  createHeightmapSet,
   applyLevelChunk,
   chunkKey,
   compactData,
@@ -18,10 +20,17 @@ export {
   createLinearPalette,
   createSingletonPalette,
   indexToPos,
+  parseChunkKey,
+  parseHeightmaps,
   parseChunkSections,
   posToIndex,
   swappedLongs,
   uncompactData,
+  type ChunkDimensionConfig,
+  type ChunkHeightmapEntry,
+  type ChunkKey,
+  type HeightmapSet,
+  type HeightmapType,
   type Palette,
   type PaletteType,
 } from "@dripleaf/chunk"
@@ -35,18 +44,26 @@ export type Dimension = {
 export type FindBlocksOptions = {
   min?: BlockPos
   max?: BlockPos
+  maxDistance?: number
   limit?: number
+  origin?: BlockPos
+}
+
+export interface FindBlocksPredicate {
+  (block: BlockData): boolean
 }
 
 export class World {
   dimension: Dimension
-  chunks: Map<number, ChunkData>
+  chunks: Map<ChunkKey, ChunkData>
   entities: Map<number, EntityData>
+  cache: CachedWorld
 
   constructor(dimension: Dimension) {
     this.dimension = dimension
     this.chunks = new Map()
     this.entities = new Map()
+    this.cache = new CachedWorld(this)
   }
 
   getBlock(pos: BlockPos): BlockData | undefined {
@@ -71,6 +88,7 @@ export class World {
       this.chunks.set(key, chunk)
     }
     chunk.setBlock(pos, state)
+    this.cache.invalidateBlock(pos)
   }
 
   addEntity(entity: EntityData): void {
@@ -97,19 +115,39 @@ export class World {
 
   forgetChunk(x: number, z: number): void {
     this.chunks.delete(chunkKey(x, z))
+    this.cache.invalidateChunk(x, z)
   }
 
-  findBlocks(predicate: (state: number, pos: BlockPos) => boolean, options: FindBlocksOptions = {}): BlockPos[] {
+  clear(): void {
+    this.chunks.clear()
+    this.cache.clear()
+  }
+
+  getHeight(type: HeightmapType, x: number, z: number): number | undefined {
+    const chunkX = Math.floor(x / 16)
+    const chunkZ = Math.floor(z / 16)
+    return this.chunks.get(chunkKey(chunkX, chunkZ))?.getHeight(type, x, z)
+  }
+
+  findBlocks(predicate: FindBlocksPredicate, options: FindBlocksOptions = {}): BlockPos[] {
     const result: BlockPos[] = []
     const limit = options.limit ?? Number.POSITIVE_INFINITY
     const min = options.min
     const max = options.max
+    const maxDistanceSq = options.maxDistance === undefined
+      ? Number.POSITIVE_INFINITY
+      : options.maxDistance * options.maxDistance
 
     for (const chunk of this.chunks.values()) {
       const baseX = chunk.x * 16
       const baseZ = chunk.z * 16
       for (const section of chunk.sections) {
         if (!section) continue
+        const paletteIds = section.palette.getIds()
+        if (paletteIds.length > 0 && !paletteIds.some((id) => {
+          const block = stateToBlock(id)
+          return block ? predicate(block) : false
+        })) continue
         const baseY = section.y * 16
         for (let y = 0; y < 16; y++) {
           const worldY = baseY + y
@@ -120,41 +158,74 @@ export class World {
             for (let x = 0; x < 16; x++) {
               const worldX = baseX + x
               if ((min && worldX < min.x) || (max && worldX > max.x)) continue
+              if (options.origin) {
+                const dx = worldX - options.origin.x
+                const dy = worldY - options.origin.y
+                const dz = worldZ - options.origin.z
+                if ((dx * dx) + (dy * dy) + (dz * dz) > maxDistanceSq) continue
+              }
               const pos = new BlockPos(worldX, worldY, worldZ)
               const state = section.getBlock(x, y, z)
-              if (!predicate(state, pos)) continue
+              const block = stateToBlock(state)
+              if (!block || !predicate(block)) continue
               result.push(pos)
-              if (result.length >= limit) return result
             }
           }
         }
       }
     }
 
-    return result
+    if (options.origin) {
+      const origin = options.origin
+      result.sort((a, b) => distanceSq(a, origin) - distanceSq(b, origin))
+    }
+    return result.slice(0, limit)
   }
 }
 
 export class CachedWorld {
-  readonly #source: { getBlock(pos: BlockPos): BlockData | undefined }
-  readonly #blocks = new Map<string, BlockData | undefined>()
+  readonly #source: { getBlockState(pos: BlockPos): number | undefined }
+  readonly #blocks = new Map<string, number | undefined>()
 
-  constructor(source: { getBlock(pos: BlockPos): BlockData | undefined }) {
+  constructor(source: { getBlockState(pos: BlockPos): number | undefined }) {
     this.#source = source
   }
 
-  getBlock(pos: BlockPos): BlockData | undefined {
-    const key = `${pos.x},${pos.y},${pos.z}`
+  getBlockState(pos: BlockPos): number {
+    const key = blockKey(pos)
     if (!this.#blocks.has(key))
-      this.#blocks.set(key, this.#source.getBlock(pos))
-    return this.#blocks.get(key)
+      this.#blocks.set(key, this.#source.getBlockState(pos) ?? 0)
+    return this.#blocks.get(key) ?? 0
   }
 
-  invalidate(pos?: BlockPos): void {
-    if (!pos) {
-      this.#blocks.clear()
-      return
-    }
-    this.#blocks.delete(`${pos.x},${pos.y},${pos.z}`)
+  getBlock(pos: BlockPos): BlockData | undefined {
+    return stateToBlock(this.getBlockState(pos))
   }
+
+  invalidateBlock(pos: BlockPos): void {
+    this.#blocks.delete(blockKey(pos))
+  }
+
+  invalidateChunk(x: number, z: number): void {
+    const prefix = `${x},${z},`
+    for (const key of this.#blocks.keys()) {
+      if (key.startsWith(prefix))
+        this.#blocks.delete(key)
+    }
+  }
+
+  clear(): void {
+    this.#blocks.clear()
+  }
+}
+
+function blockKey(pos: BlockPos): string {
+  return `${Math.floor(pos.x / 16)},${Math.floor(pos.z / 16)},${pos.x},${pos.y},${pos.z}`
+}
+
+function distanceSq(a: BlockPos, b: BlockPos): number {
+  const dx = a.x - b.x
+  const dy = a.y - b.y
+  const dz = a.z - b.z
+  return (dx * dx) + (dy * dy) + (dz * dz)
 }

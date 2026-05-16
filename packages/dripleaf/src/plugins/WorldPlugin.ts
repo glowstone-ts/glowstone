@@ -19,7 +19,8 @@ export class WorldPlugin implements ClientPlugin {
 
     conn.onPacket(play.ClientboundLevelChunkWithLightPacket, (packet) => {
       if (!ctx.world) return
-      applyLevelChunk(ctx.world.chunks, packet.x, packet.z, packet.chunkData.data)
+      applyLevelChunk(ctx.world.chunks, packet.x, packet.z, packet.chunkData.data, undefined, packet.chunkData.heightmaps)
+      ctx.world.cache.invalidateChunk(packet.x, packet.z)
     })
 
     conn.onPacket(play.ClientboundBlockUpdatePacket, (packet) => {
@@ -51,6 +52,7 @@ export class WorldPlugin implements ClientPlugin {
         type: packet.commonPlayerSpawnInfo.dimensionType,
         identifier: packet.commonPlayerSpawnInfo.dimension.toString(),
       }
+      ctx.world.clear()
     })
   }
 }
