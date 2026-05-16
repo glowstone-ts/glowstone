@@ -243,5 +243,31 @@ export class PlayPlugin implements ClientPlugin {
     conn.onPacket(play.ClientboundSetBorderWarningDelayPacket, (packet) => {
       ctx.worldBorder.warningTime = packet.delay
     })
+
+    conn.onPacket(play.ClientboundUpdateAdvancementsPacket, (packet) => {
+      if (packet.reset) {
+        ctx.advancements.recipes.clear()
+      }
+      for (const id of packet.removed) {
+        ctx.advancements.recipes.delete(id.toString())
+      }
+    })
+
+    conn.onPacket(play.ClientboundRecipeBookAddPacket, (packet) => {
+      for (const entry of packet.entries) {
+        ctx.advancements.recipes.add(entry.id.toString())
+      }
+    })
+
+    conn.onPacket(play.ClientboundRecipeBookRemovePacket, (packet) => {
+      for (const id of packet.recipes) {
+        ctx.advancements.recipes.delete(id.toString())
+      }
+    })
+
+    conn.onPacket(play.ClientboundRecipeBookSettingsPacket, (packet) => {
+      ctx.advancements.recipeBookOpen = packet.settings.crafting.open
+      ctx.advancements.recipeBookFiltering = packet.settings.crafting.filtering
+    })
   }
 }

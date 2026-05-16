@@ -96,6 +96,12 @@ export class Client {
     warningTime: 0,
   }
 
+  advancements = {
+    recipes: new Set<string>(),
+    recipeBookOpen: false,
+    recipeBookFiltering: false,
+  }
+
   world: World | null = null
   entities: Map<number, EntityData> = new Map()
   players = new Map<string, { uuid: string; name: string }>()
@@ -187,6 +193,8 @@ export class Client {
       set attackCooldownMax(v) { client.attackCooldownMax = v },
       get worldBorder() { return client.worldBorder },
       set worldBorder(v) { client.worldBorder = v },
+      get advancements() { return client.advancements },
+      set advancements(v) { client.advancements = v },
       emitter: this.emitter,
       emit: (event, ...args) => client.emit(event, ...args),
     }

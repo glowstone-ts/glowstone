@@ -64,4 +64,9 @@ export type ClientContext = {
     warningBlocks: number
     warningTime: number
   }
+  advancements: {
+    recipes: Set<string>
+    recipeBookOpen: boolean
+    recipeBookFiltering: boolean
+  }
 }
