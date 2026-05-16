@@ -16,17 +16,10 @@ export class BlockPos {
   }
 
   pack(): bigint {
-    const x = this.x
-    const y = this.y
-    const z = this.z
-    if (x < -33554432 || x > 33554431 || y < -2048 || y > 2047 || z < -33554432 || z > 33554431)
-      throw new Error(`Vec3 out of range: ${x}, ${y}, ${z}`)
-
-    return (
-      (BigInt(x & 0x3ffffff) << 38n) |
-      (BigInt(z & 0x3ffffff) << 12n) |
-      BigInt(y & 0xfff)
-    )
+    const bx = BigInt(this.x) & 0x3FFFFFFn
+    const bz = BigInt(this.z) & 0x3FFFFFFn
+    const by = BigInt(this.y) & 0xFFFn
+    return (bx << 38n) | (bz << 12n) | by
   }
 
   static unpack(value: bigint): BlockPos {
