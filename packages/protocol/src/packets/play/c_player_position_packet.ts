@@ -21,7 +21,7 @@ export class ClientboundPlayerPositionPacket extends DripleafPacket {
 	static readonly codec = packetCodec(ClientboundPlayerPositionPacket, {
 		teleportId: Codecs.varInt,
 		change: PositionMoveRotationCodec,
-		relatives: Codecs.unsignedShort,
+		relatives: Codecs.int,
 	});
 
 	constructor(
