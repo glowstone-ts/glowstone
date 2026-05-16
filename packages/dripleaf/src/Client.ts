@@ -5,7 +5,7 @@ import { Vec3 } from "vec3"
 import { Connection, State, InteractionHand, BlockFace, play } from "@dripleaf/protocol"
 import type { GameProfile } from "@dripleaf/core"
 import { BlockPos } from "@dripleaf/core"
-import { Window, simulatePickupClick, ClickType } from "@dripleaf/inventory"
+import { Window, simulateClick, ClickType } from "@dripleaf/inventory"
 import { RegistryManager } from "@dripleaf/registry"
 import type { World } from "@dripleaf/world"
 import type { EntityData } from "@dripleaf/entity"
@@ -336,17 +336,17 @@ export class Client {
     ))
   }
 
-  clickSlot(slot: number, button = 0, windowId?: number): void {
+  clickSlot(slot: number, button = 0, clickType: ClickType = ClickType.Pickup, windowId?: number): void {
     if (!this.connection || !this.loggedIn) throw new Error("Not connected")
     const window = this.getWindow(windowId)
-    const result = simulatePickupClick(window, slot, button)
+    const result = simulateClick(window, slot, button, clickType)
     if (!result) throw new Error("Invalid click")
     this.connection.write(new play.ServerboundContainerClickPacket(
       window.id,
       window.state,
       slot,
       button,
-      ClickType.Pickup,
+      clickType,
       result.changedSlots,
       result.carriedItem,
     ))
