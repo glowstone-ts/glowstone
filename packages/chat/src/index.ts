@@ -193,16 +193,18 @@ export function fromNbt(nbt: UnnamedNbtTag): ChatComponent {
 function extractText(component: ChatComponent): string {
   if (typeof component === "string") return component
   let result = component.text ?? ""
+  if (component.translate && !component.text) {
+    result = component.translate
+  }
   if (component.with) {
-    for (const child of component.with)
-      result += typeof child === "object" && child !== null ? extractText(child as ChatComponent) : String(child ?? "")
+    for (const child of component.with) {
+      const text = typeof child === "object" && child !== null ? extractText(child as ChatComponent) : String(child ?? "")
+      if (text) result += " " + text
+    }
   }
   if (component.extra) {
     for (const child of component.extra)
       result += extractText(child)
-  }
-  if (component.translate && !component.text) {
-    result += component.translate
   }
   return result
 }
