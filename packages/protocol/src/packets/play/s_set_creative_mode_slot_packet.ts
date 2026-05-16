@@ -6,7 +6,7 @@ import { DripleafPacket, packetCodec } from '../DripleafPacket';
 
 export class ServerboundSetCreativeModeSlotPacket extends DripleafPacket {
 	static readonly codec = packetCodec(ServerboundSetCreativeModeSlotPacket, {
-		slotNum: Codecs.unsignedShort,
+		slotNum: Codecs.short,
 		itemStack: ItemStackCodec,
 	});
 

@@ -9,7 +9,7 @@ export class ClientboundContainerSetSlotPacket extends DripleafPacket {
 	static readonly codec = packetCodec(ClientboundContainerSetSlotPacket, {
 		windowId: Codecs.varInt,
 		stateId: Codecs.varInt,
-		slot: Codecs.unsignedShort,
+		slot: Codecs.short,
 		slotData: ItemStackCodec,
 	});
 
