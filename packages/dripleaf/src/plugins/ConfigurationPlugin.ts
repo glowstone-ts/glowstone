@@ -1,5 +1,5 @@
 import { State, ChatVisibility, HumanoidArm, ParticleStatus, configuration, play } from "@dripleaf/protocol"
-import { chatComponentFromNbt } from "@dripleaf/chat"
+import { toPlainText } from "@dripleaf/chat"
 import type { ClientContext } from "../context"
 import type { ClientPlugin } from "./types"
 
@@ -8,7 +8,7 @@ export class ConfigurationPlugin implements ClientPlugin {
 
   register(ctx: ClientContext, conn: import("@dripleaf/protocol").Connection): void {
     conn.onPacket(configuration.ClientboundDisconnectPacket, (packet) => {
-      ctx.emit("disconnect", chatComponentFromNbt(packet.reason))
+      ctx.emit("disconnect", toPlainText(packet.reason))
       conn.disconnect()
     })
 

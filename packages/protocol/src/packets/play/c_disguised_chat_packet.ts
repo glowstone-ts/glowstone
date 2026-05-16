@@ -1,32 +1,33 @@
-import { Codecs, type PacketReader, type PacketWriter } from '../../buffer';
+import { ChatComponentCodec } from '../../datatypes';
+import { type PacketReader, type PacketWriter } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-import type { UnnamedNbtTag } from '@dripleaf/nbt';
+import type { ChatComponent } from '@dripleaf/chat';
 
 export type DisguisedChatTypeBound = {
 	chatType: number;
-	name: UnnamedNbtTag;
-	targetName: UnnamedNbtTag | null;
+	name: ChatComponent;
+	targetName: ChatComponent | null;
 };
 
 export class ClientboundDisguisedChatPacket extends DripleafPacket {
 	static readonly codec = packetCodec({
 		encode(writer: PacketWriter, value: ClientboundDisguisedChatPacket) {
-			writer.writeNbt(value.message);
+			ChatComponentCodec.encode(writer, value.message);
 			writer.writeVarInt(value.chatType.chatType);
-			writer.writeNbt(value.chatType.name);
-			writer.writePrefixedOptional(value.chatType.targetName, v => writer.writeNbt(v));
+			ChatComponentCodec.encode(writer, value.chatType.name);
+			writer.writePrefixedOptional(value.chatType.targetName, v => ChatComponentCodec.encode(writer, v));
 		},
 		decode(reader: PacketReader): ClientboundDisguisedChatPacket {
-			const message = reader.readNbt();
+			const message = ChatComponentCodec.decode(reader);
 			const chatTypeId = reader.readVarInt();
-			const name = reader.readNbt();
-			const targetName = reader.readPrefixedOptional(() => reader.readNbt());
+			const name = ChatComponentCodec.decode(reader);
+			const targetName = reader.readPrefixedOptional(() => ChatComponentCodec.decode(reader));
 			return new ClientboundDisguisedChatPacket(message, { chatType: chatTypeId, name, targetName });
 		},
 	});
 
 	constructor(
-		public message: UnnamedNbtTag,
+		public message: ChatComponent,
 		public chatType: DisguisedChatTypeBound,
 	) {
 		super();

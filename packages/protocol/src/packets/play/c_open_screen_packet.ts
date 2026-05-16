@@ -2,20 +2,21 @@
 
 import { MenuType } from '@dripleaf/registry';
 import { Codecs } from '../../buffer';
+import { ChatComponentCodec } from '../../datatypes';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-import type { UnnamedNbtTag } from '@dripleaf/nbt';
+import type { ChatComponent } from '@dripleaf/chat';
 
 export class ClientboundOpenScreenPacket extends DripleafPacket {
 	static readonly codec = packetCodec(ClientboundOpenScreenPacket, {
 		containerId: Codecs.varInt,
 		type: Codecs.varIntEnum(MenuType),
-		title: Codecs.nbt,
+		title: ChatComponentCodec,
 	});
 
 	constructor(
 		public containerId: number,
 		public type: MenuType,
-		public title: UnnamedNbtTag
+		public title: ChatComponent
 	) {
 		super();
 	}

@@ -1,5 +1,5 @@
 import { MenuType } from "@dripleaf/registry"
-import { chatComponentFromNbt } from "@dripleaf/chat"
+import { toPlainText } from "@dripleaf/chat"
 import { Window, menuSlotCount, menuTypeToWindowType } from "@dripleaf/inventory"
 import { play } from "@dripleaf/protocol"
 import type { ItemStack } from "@dripleaf/inventory"
@@ -20,7 +20,7 @@ export class InventoryPlugin implements ClientPlugin {
       const window = new Window(
         packet.containerId,
         menuTypeToWindowType(packet.type as MenuType),
-        chatComponentFromNbt(packet.title),
+        toPlainText(packet.title),
         slotCount,
       )
       ctx.windows.set(packet.containerId, window)

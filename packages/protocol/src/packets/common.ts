@@ -1,8 +1,9 @@
-import { NbtTagType, type NbtValue, type UnnamedNbtTag } from "@dripleaf/nbt";
+import { NbtTagType, type NbtValue } from "@dripleaf/nbt";
 import { ItemStack, ItemStackData, type ItemStack as ItemStackType } from "@dripleaf/inventory";
 import { DataComponentType, DebugSubscription, ItemType } from "@dripleaf/registry";
 import { codec, Codecs } from "../buffer";
 import type { Either, PacketReader, PacketWriter } from "../buffer";
+import type { ChatComponent } from "@dripleaf/chat";
 
 export enum ServerLinkType {
 	BugReport = 0,
@@ -18,7 +19,7 @@ export enum ServerLinkType {
 }
 
 export type ServerLink = {
-	label: Either<ServerLinkType, UnnamedNbtTag>;
+	label: Either<ServerLinkType, ChatComponent>;
 	url: string;
 }
 

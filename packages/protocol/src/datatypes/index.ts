@@ -18,3 +18,4 @@ export * from "./PlayerInput";
 export * from "./RespawnData";
 export * from "./SoundHolder";
 export * from "./GameProfile";
+export * from "./ChatComponent";

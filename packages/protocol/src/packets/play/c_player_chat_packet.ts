@@ -1,6 +1,7 @@
 import { PacketReader, PacketWriter, Codecs } from '../../buffer';
+import { ChatComponentCodec } from '../../datatypes';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-import type { UnnamedNbtTag } from '@dripleaf/nbt';
+import type { ChatComponent } from '@dripleaf/chat';
 
 // signature: Option<MessageSignature> = boolean + 256 bytes
 // On the wire, Option<MessageSignature> is encoded as:
@@ -24,8 +25,8 @@ export type PackedMessageSignature =
 
 export type ChatTypeBound = {
   chatType: number; // Holder varint: 0=direct(DirectChatType), >0=reference(chatTypeIndex-1)
-  name: UnnamedNbtTag;
-  targetName: UnnamedNbtTag | null;
+  name: ChatComponent;
+  targetName: ChatComponent | null;
 };
 
 export type FilterMask =
@@ -102,13 +103,13 @@ export class ClientboundPlayerChatPacket extends DripleafPacket {
       writer.writeLong(value.body.salt);
       encodeLastSeen(writer, value.body.lastSeen);
       // unsigned content: optional NBT (boolean prefixed)
-      writer.writePrefixedOptional(value.unsignedContent, (content) => writer.writeNbt(content));
+      writer.writePrefixedOptional(value.unsignedContent, (content) => ChatComponentCodec.encode(writer, content));
       // filter mask
       encodeFilterMask(writer, value.filterMask);
       // chat type: Holder<ChatKind, DirectChatType>
       writer.writeVarInt(value.chatType.chatType);
-      writer.writeNbt(value.chatType.name);
-      writer.writePrefixedOptional(value.chatType.targetName, v => writer.writeNbt(v));
+      ChatComponentCodec.encode(writer, value.chatType.name);
+      writer.writePrefixedOptional(value.chatType.targetName, v => ChatComponentCodec.encode(writer, v));
     },
     decode(reader: PacketReader): ClientboundPlayerChatPacket {
       const globalIndex = reader.readVarInt();
@@ -120,11 +121,11 @@ export class ClientboundPlayerChatPacket extends DripleafPacket {
       const salt = reader.readLong();
       const lastSeen = decodeLastSeen(reader);
       const body: SignedMessageBody = { content, timestamp, salt, lastSeen };
-      const unsignedContent = reader.readPrefixedOptional(() => reader.readNbt());
+      const unsignedContent = reader.readPrefixedOptional(() => ChatComponentCodec.decode(reader));
       const filterMask = decodeFilterMask(reader);
       const chatTypeId = reader.readVarInt();
-      const name = reader.readNbt();
-      const targetName = reader.readPrefixedOptional(() => reader.readNbt());
+      const name = ChatComponentCodec.decode(reader);
+      const targetName = reader.readPrefixedOptional(() => ChatComponentCodec.decode(reader));
       return new ClientboundPlayerChatPacket(
         globalIndex, sender, index, signature, body,
         unsignedContent, filterMask,
@@ -139,7 +140,7 @@ export class ClientboundPlayerChatPacket extends DripleafPacket {
     public index: number,
     public signature: Uint8Array | null,
     public body: SignedMessageBody,
-    public unsignedContent: UnnamedNbtTag | null,
+    public unsignedContent: ChatComponent | null,
     public filterMask: FilterMask,
     public chatType: ChatTypeBound,
   ) {
