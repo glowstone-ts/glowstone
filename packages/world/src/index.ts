@@ -214,6 +214,10 @@ export class CachedWorld {
     }
   }
 
+  invalidateSection(x: number, z: number): void {
+    this.invalidateChunk(x, z)
+  }
+
   clear(): void {
     this.#blocks.clear()
   }
