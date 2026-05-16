@@ -13,7 +13,7 @@ export class ClientboundCustomQueryPacket extends DripleafPacket {
 		decode(reader: PacketReader): ClientboundCustomQueryPacket {
 			return new ClientboundCustomQueryPacket(
 				reader.readVarInt(),
-				reader.readIdentifier(),
+				reader.readIdentifier().toString(),
 				reader.readRemaining(),
 			);
 		},

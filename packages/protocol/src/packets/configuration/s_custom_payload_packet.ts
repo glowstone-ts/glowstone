@@ -11,7 +11,7 @@ export class ServerboundCustomPayloadPacket extends DripleafPacket {
 		},
 		decode(reader: PacketReader): ServerboundCustomPayloadPacket {
 			return new ServerboundCustomPayloadPacket(
-				reader.readIdentifier(),
+				reader.readIdentifier().toString(),
 				reader.readRemaining(),
 			);
 		},

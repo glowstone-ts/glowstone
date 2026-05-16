@@ -20,7 +20,7 @@ export class KeepAlivePlugin implements ClientPlugin {
     })
 
     conn.onPacket(configuration.ClientboundPingPacket, (packet) => {
-      safeWrite(conn, new configuration.ServerboundPongPacket(BigInt(packet.pingId)))
+      safeWrite(conn, new configuration.ServerboundPongPacket(packet.pingId))
     })
 
     conn.onPacket(play.ClientboundKeepAlivePacket, (packet) => {
