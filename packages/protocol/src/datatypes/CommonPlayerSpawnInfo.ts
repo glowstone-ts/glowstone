@@ -3,8 +3,23 @@ import { DimensionType } from "@dripleaf/registry"
 import { codec, Codecs, type PacketReader, type PacketWriter } from "../buffer"
 import { GlobalPosCodec } from "./GlobalPos"
 
+const dimensionTypeCodec = {
+  encode(w: PacketWriter, v: DimensionType) {
+    const values = Object.keys(DimensionType).filter(k => Number.isNaN(Number(k))).map(k => DimensionType[k as keyof typeof DimensionType]) as DimensionType[]
+    const idx = values.indexOf(v)
+    if (idx < 0) throw new Error(`Unknown DimensionType: ${v}`)
+    w.writeVarInt(idx + 1)
+  },
+  decode(r: PacketReader): DimensionType {
+    const id = r.readVarInt()
+    if (id === 0) throw new Error("Direct dimension type not supported")
+    const values = Object.keys(DimensionType).filter(k => Number.isNaN(Number(k))).map(k => DimensionType[k as keyof typeof DimensionType]) as DimensionType[]
+    return values[id - 1]!
+  },
+}
+
 export const CommonPlayerSpawnInfoCodec = codec(CommonPlayerSpawnInfo, {
-  dimensionType: Codecs.varIntEnum(DimensionType),
+  dimensionType: dimensionTypeCodec,
   dimension: Codecs.identifier,
   seed: Codecs.long,
   gameType: Codecs.byteEnum(GameType),
