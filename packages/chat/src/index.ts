@@ -186,6 +186,13 @@ function getNbtListItems(value: unknown): unknown[] {
 }
 
 export function fromNbt(nbt: UnnamedNbtTag): ChatComponent {
+  if (nbt.type === NbtTagType.String) {
+    try {
+      return JSON.parse(nbt.value as string) as ChatComponent
+    } catch {
+      return nbt.value as string
+    }
+  }
   if (nbt.type !== NbtTagType.Compound) return ""
   return fromNbtCompound(nbt.value as NbtCompound)
 }
