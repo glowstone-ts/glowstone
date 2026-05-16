@@ -11,8 +11,16 @@ export class KeepAlivePlugin implements ClientPlugin {
         conn.write(new configuration.ServerboundKeepAlivePacket(packet.keepAliveId))
     })
 
+    conn.onPacket(configuration.ClientboundPingPacket, (packet) => {
+      conn.write(new configuration.ServerboundPongPacket(BigInt(packet.pingId)))
+    })
+
     conn.onPacket(play.ClientboundKeepAlivePacket, (packet) => {
       conn.write(new play.ServerboundKeepAlivePacket(packet.keepAliveId))
+    })
+
+    conn.onPacket(play.ClientboundPingPacket, (packet) => {
+      conn.write(new play.ServerboundPongPacket(packet.id))
     })
   }
 }
