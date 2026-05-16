@@ -18,22 +18,23 @@ export function classifyBlock(block: BlockLike | undefined): BlockClassification
 
   const { type, properties: p } = block
   const typeName = String(type)
+  const shortName = typeName.includes(":") ? typeName.split(":")[1]! : typeName
 
-  if (type === BlockType.Air || typeName === "air")
+  if (type === BlockType.Air || shortName === "air" || shortName === "void_air" || shortName === "cave_air")
     return { passable: true, solid: false, standable: false, water: false }
 
-  const water = type === BlockType.Water || typeName === "water" || p.waterlogged === true
+  const water = type === BlockType.Water || shortName === "water" || p.waterlogged === true
   const dangerous =
     type === BlockType.Lava ||
-    typeName === "lava" ||
+    shortName === "lava" ||
     type === BlockType.Fire ||
     type === BlockType.SoulFire ||
     type === BlockType.SweetBerryBush ||
     type === BlockType.PowderSnow
 
   const slab = p.type === "top" || p.type === "bottom" || p.type === "double"
-  const stair = typeName.endsWith("_stairs")
-  const fullCube = !slab && !stair && type !== BlockType.Snow && !typeName.includes("flower") && !typeName.includes("sign")
+  const stair = shortName.endsWith("_stairs")
+  const fullCube = !slab && !stair && type !== BlockType.Snow && !shortName.includes("flower") && !shortName.includes("sign")
 
   const passable = !fullCube && !water && !dangerous
   const solid = (fullCube || p.type === "top" || p.type === "double") && type !== BlockType.MagmaBlock
