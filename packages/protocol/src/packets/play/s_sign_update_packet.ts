@@ -2,20 +2,36 @@
 
 import { BlockPos } from '@dripleaf/core';
 import { BlockPosCodec } from '../../datatypes/BlockPos';
-import { Codecs } from '../../buffer';
+import { type PacketReader, type PacketWriter, Codecs } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
 
 export class ServerboundSignUpdatePacket extends DripleafPacket {
-	static readonly codec = packetCodec(ServerboundSignUpdatePacket, {
-		pos: BlockPosCodec,
-		isFrontText: Codecs.bool,
-		lines: Codecs.array(Codecs.string()),
+	static readonly codec = packetCodec({
+		encode(writer: PacketWriter, value: ServerboundSignUpdatePacket) {
+			BlockPosCodec.encode(writer, value.pos);
+			writer.writeBoolean(value.isFrontText);
+			for (const line of value.lines) {
+				writer.writeString(line, 384);
+			}
+		},
+		decode(reader: PacketReader): ServerboundSignUpdatePacket {
+			return new ServerboundSignUpdatePacket(
+				BlockPosCodec.decode(reader),
+				reader.readBoolean(),
+				[
+					reader.readString(384),
+					reader.readString(384),
+					reader.readString(384),
+					reader.readString(384),
+				],
+			);
+		},
 	});
 
 	constructor(
 		public pos: BlockPos,
 		public isFrontText: boolean,
-		public lines: string[],
+		public lines: [string, string, string, string],
 	) {
 		super();
 	}

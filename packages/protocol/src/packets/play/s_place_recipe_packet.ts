@@ -2,18 +2,17 @@
 
 import { Codecs } from '../../buffer';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
-import type { Identifier } from '@dripleaf/registry';
 
 export class ServerboundPlaceRecipePacket extends DripleafPacket {
 	static readonly codec = packetCodec(ServerboundPlaceRecipePacket, {
 		containerId: Codecs.varInt,
-		recipe: Codecs.identifier,
+		recipe: Codecs.varInt,
 		shiftDown: Codecs.bool,
 	});
 
 	constructor(
 		public containerId: number,
-		public recipe: Identifier,
+		public recipe: number,
 		public shiftDown: boolean,
 	) {
 		super();
