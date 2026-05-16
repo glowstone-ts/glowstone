@@ -40,4 +40,19 @@ export type ClientContext = {
   players: Map<string, { uuid: string; name: string }>
   emitter: EventEmitter
   emit(event: string, ...args: unknown[]): void
+
+  gameMode: number
+  previousGameMode: number
+  isFlying: boolean
+  flyingSpeed: number
+  walkingSpeed: number
+  invulnerable: boolean
+  instantBreak: boolean
+  experienceLevel: number
+  experienceProgress: number
+  totalExperience: number
+  velocity: { x: number; y: number; z: number }
+  isDead: boolean
+  attackCooldown: number
+  attackCooldownMax: number
 }

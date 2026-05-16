@@ -14,14 +14,42 @@ export class PlayPlugin implements ClientPlugin {
     conn.onPacket(play.ClientboundLoginPacket, (packet) => {
       ctx.entityId = packet.entityId
       ctx.loggedIn = true
+      ctx.isDead = false
       const dim: Dimension = {
         type: packet.commonPlayerSpawnInfo.dimensionType,
         identifier: packet.commonPlayerSpawnInfo.dimension.toString(),
       }
       ctx.world = new World(dim)
       ctx.pathfinder = new Pathfinder(pathWorldFromDripleaf(ctx.world))
+      ctx.gameMode = packet.commonPlayerSpawnInfo.gameType
+      ctx.position.x = 0
+      ctx.position.y = 0
+      ctx.position.z = 0
+      ctx.velocity.x = 0
+      ctx.velocity.y = 0
+      ctx.velocity.z = 0
       conn.write(new play.ServerboundPlayerLoadedPacket())
       ctx.emit("spawn", packet)
+    })
+
+    conn.onPacket(play.ClientboundRespawnPacket, (packet) => {
+      ctx.isDead = false
+      const dim: Dimension = {
+        type: packet.commonPlayerSpawnInfo.dimensionType,
+        identifier: packet.commonPlayerSpawnInfo.dimension.toString(),
+      }
+      ctx.world = new World(dim)
+      ctx.pathfinder = new Pathfinder(pathWorldFromDripleaf(ctx.world))
+      ctx.previousGameMode = ctx.gameMode
+      ctx.gameMode = packet.commonPlayerSpawnInfo.gameType
+      ctx.position.x = 0
+      ctx.position.y = 0
+      ctx.position.z = 0
+      ctx.velocity.x = 0
+      ctx.velocity.y = 0
+      ctx.velocity.z = 0
+      ctx.emit("gameModeChanged", ctx.gameMode, ctx.previousGameMode)
+      ctx.emit("respawn", packet)
     })
 
     conn.onPacket(play.ClientboundDisconnectPacket, (packet) => {
@@ -46,7 +74,45 @@ export class PlayPlugin implements ClientPlugin {
       ctx.health = packet.health
       ctx.food = packet.food
       ctx.saturation = packet.saturation
+      if (packet.health <= 0 && !ctx.isDead) {
+        ctx.isDead = true
+        ctx.emit("death")
+      }
       ctx.emit("health", packet.health, packet.food, packet.saturation)
+    })
+
+    conn.onPacket(play.ClientboundSetExperiencePacket, (packet) => {
+      ctx.experienceLevel = packet.experienceLevel
+      ctx.experienceProgress = packet.experienceProgress
+      ctx.totalExperience = packet.totalExperience
+      ctx.emit("experience", packet.experienceLevel, packet.experienceProgress, packet.totalExperience)
+    })
+
+    conn.onPacket(play.ClientboundPlayerAbilitiesPacket, (packet) => {
+      ctx.invulnerable = packet.abilities.invulnerable
+      ctx.isFlying = packet.abilities.isFlying
+      ctx.flyingSpeed = packet.abilities.flyingSpeed
+      ctx.walkingSpeed = packet.abilities.walkingSpeed
+      ctx.instantBreak = packet.abilities.instabuild
+      ctx.emit("abilitiesChanged")
+    })
+
+    conn.onPacket(play.ClientboundSetEntityMotionPacket, (packet) => {
+      if (packet.entityId === ctx.entityId) {
+        ctx.velocity.x = packet.movement.x
+        ctx.velocity.y = packet.movement.y
+        ctx.velocity.z = packet.movement.z
+        ctx.emit("velocity", ctx.velocity)
+      }
+    })
+
+    conn.onPacket(play.ClientboundExplodePacket, (packet) => {
+      if (packet.playerKnockback) {
+        ctx.velocity.x += packet.playerKnockback.x
+        ctx.velocity.y += packet.playerKnockback.y
+        ctx.velocity.z += packet.playerKnockback.z
+        ctx.emit("velocity", ctx.velocity)
+      }
     })
 
     conn.onPacket(play.ClientboundPlayerPositionPacket, (packet) => {
@@ -62,6 +128,11 @@ export class PlayPlugin implements ClientPlugin {
       else ctx.yaw = packet.change.yaw
       if (rel & play.Relative.Pitch) ctx.pitch += packet.change.pitch
       else ctx.pitch = packet.change.pitch
+      if (!(rel & play.Relative.X) && !(rel & play.Relative.Y) && !(rel & play.Relative.Z)) {
+        ctx.velocity.x = 0
+        ctx.velocity.y = 0
+        ctx.velocity.z = 0
+      }
       conn.write(new play.ServerboundAcceptTeleportationPacket(packet.teleportId))
       ctx.emit("move")
     })
@@ -82,6 +153,60 @@ export class PlayPlugin implements ClientPlugin {
       entity.position.z = packet.values.position.z
       entity.yaw = packet.values.yaw
       entity.pitch = packet.values.pitch
+    })
+
+    conn.onPacket(play.ClientboundSetObjectivePacket, (packet) => {
+      ctx.emit("scoreboardObjective", packet.method, packet.objectiveName, packet.displayName)
+    })
+
+    conn.onPacket(play.ClientboundSetScorePacket, (packet) => {
+      ctx.emit("scoreboardScore", packet.objectiveName, packet.owner, packet.score)
+    })
+
+    conn.onPacket(play.ClientboundSetDisplayObjectivePacket, (packet) => {
+      ctx.emit("scoreboardDisplay", packet.displaySlot, packet.objectiveName)
+    })
+
+    conn.onPacket(play.ClientboundBossEventPacket, (packet) => {
+      const title = "title" in packet.operation ? packet.operation.title : null
+      const health = "health" in packet.operation ? packet.operation.health : 0
+      ctx.emit("bossBar", packet.action, packet.uuid, title, health)
+    })
+
+    conn.onPacket(play.ClientboundSetTitleTextPacket, (packet) => {
+      ctx.emit("title", "title", packet.text, 0, 0, 0)
+    })
+
+    conn.onPacket(play.ClientboundSetSubtitleTextPacket, (packet) => {
+      ctx.emit("title", "subtitle", packet.text, 0, 0, 0)
+    })
+
+    conn.onPacket(play.ClientboundSetTitlesAnimationPacket, (packet) => {
+      ctx.emit("title", "times", null, packet.fadeIn, packet.stay, packet.fadeOut)
+    })
+
+    conn.onPacket(play.ClientboundClearTitlesPacket, (packet) => {
+      ctx.emit("title", "clear", null, 0, 0, 0)
+    })
+
+    conn.onPacket(play.ClientboundSetActionBarTextPacket, (packet) => {
+      ctx.emit("title", "actionbar", packet.text, 0, 0, 0)
+    })
+
+    conn.onPacket(play.ClientboundCommandSuggestionsPacket, (packet) => {
+      ctx.emit("tabComplete", packet.transactionId, packet.matches.map((m: any) => m.match))
+    })
+
+    conn.onPacket(play.ClientboundBlockDestructionPacket, (packet) => {
+      ctx.emit("blockBreakProgress", packet.entityId, packet.position, packet.progress)
+    })
+
+    conn.onPacket(play.ClientboundGameEventPacket, (packet) => {
+      if (packet.event === 3) {
+        ctx.previousGameMode = ctx.gameMode
+        ctx.gameMode = packet.value
+        ctx.emit("gameModeChanged", ctx.gameMode, ctx.previousGameMode)
+      }
     })
   }
 }

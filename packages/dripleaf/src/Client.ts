@@ -16,6 +16,7 @@ import type { ChatComponent } from "@dripleaf/chat"
 
 type ClientEvents = {
   spawn: (packet: play.ClientboundLoginPacket) => void
+  respawn: (packet: play.ClientboundRespawnPacket) => void
   chat: (message: ChatComponent, sender: ChatComponent | null) => void
   disconnect: (reason: string) => void
   error: (error: Error) => void
@@ -24,6 +25,11 @@ type ClientEvents = {
   state: (state: State) => void
   move: () => void
   health: (health: number, food: number, saturation: number) => void
+  experience: (level: number, progress: number, total: number) => void
+  gameModeChanged: (gameMode: number, previousGameMode: number) => void
+  abilitiesChanged: () => void
+  death: () => void
+  velocity: (velocity: { x: number; y: number; z: number }) => void
   heldItemChange: (slot: number) => void
   entitySpawn: (entity: EntityData) => void
   entityDespawn: (entityId: number) => void
@@ -33,6 +39,13 @@ type ClientEvents = {
   playerLeave: (player: { uuid: string; name: string }) => void
   pathFound: (result: PathResult) => void
   pathStop: () => void
+  scoreboardObjective: (action: number, name: string, displayName: ChatComponent | null) => void
+  scoreboardScore: (objectiveName: string, itemName: string, value: number | null) => void
+  scoreboardDisplay: (position: number, objectiveName: string) => void
+  bossBar: (action: number, uuid: string, title: ChatComponent | null, health: number) => void
+  title: (action: string, text: ChatComponent | null, fadeIn: number, stay: number, fadeOut: number) => void
+  tabComplete: (id: number, matches: string[]) => void
+  blockBreakProgress: (entityId: number, position: BlockPos, stage: number) => void
 }
 
 export class Client {
@@ -54,6 +67,24 @@ export class Client {
   health = 20
   food = 20
   saturation = 5
+
+  gameMode = 0
+  previousGameMode = -1
+  isFlying = false
+  flyingSpeed = 0.05
+  walkingSpeed = 0.1
+  invulnerable = false
+  instantBreak = false
+
+  experienceLevel = 0
+  experienceProgress = 0
+  totalExperience = 0
+
+  velocity = { x: 0, y: 0, z: 0 }
+  isDead = false
+
+  attackCooldown = 0
+  attackCooldownMax = 20
 
   world: World | null = null
   entities: Map<number, EntityData> = new Map()
@@ -116,6 +147,34 @@ export class Client {
       set pathfinder(v) { client.pathfinder = v },
       mining: null,
       get players() { return client.players },
+      get gameMode() { return client.gameMode },
+      set gameMode(v) { client.gameMode = v },
+      get previousGameMode() { return client.previousGameMode },
+      set previousGameMode(v) { client.previousGameMode = v },
+      get isFlying() { return client.isFlying },
+      set isFlying(v) { client.isFlying = v },
+      get flyingSpeed() { return client.flyingSpeed },
+      set flyingSpeed(v) { client.flyingSpeed = v },
+      get walkingSpeed() { return client.walkingSpeed },
+      set walkingSpeed(v) { client.walkingSpeed = v },
+      get invulnerable() { return client.invulnerable },
+      set invulnerable(v) { client.invulnerable = v },
+      get instantBreak() { return client.instantBreak },
+      set instantBreak(v) { client.instantBreak = v },
+      get experienceLevel() { return client.experienceLevel },
+      set experienceLevel(v) { client.experienceLevel = v },
+      get experienceProgress() { return client.experienceProgress },
+      set experienceProgress(v) { client.experienceProgress = v },
+      get totalExperience() { return client.totalExperience },
+      set totalExperience(v) { client.totalExperience = v },
+      get velocity() { return client.velocity },
+      set velocity(v) { client.velocity = v },
+      get isDead() { return client.isDead },
+      set isDead(v) { client.isDead = v },
+      get attackCooldown() { return client.attackCooldown },
+      set attackCooldown(v) { client.attackCooldown = v },
+      get attackCooldownMax() { return client.attackCooldownMax },
+      set attackCooldownMax(v) { client.attackCooldownMax = v },
       emitter: this.emitter,
       emit: (event, ...args) => client.emit(event, ...args),
     }
@@ -298,6 +357,56 @@ export class Client {
     const id = windowId ?? this.currentWindowId
     if (id === null || id === 0) return
     this.connection.write(new play.ServerboundContainerClosePacket(id))
+  }
+
+  respawn(): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundClientCommandPacket(0 as any))
+  }
+
+  interactEntity(entityId: number, hand: InteractionHand = InteractionHand.MainHand, location?: { x: number; y: number; z: number }): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    const loc = location ?? { x: this.position.x, y: this.position.y, z: this.position.z }
+    this.connection.write(new play.ServerboundInteractPacket(entityId, hand, new Vec3(loc.x, loc.y, loc.z), false))
+    this.connection.write(new play.ServerboundInteractPacket(entityId, hand, new Vec3(loc.x, loc.y, loc.z), false))
+  }
+
+  useItem(hand: InteractionHand = InteractionHand.MainHand): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundUseItemPacket(hand, this.ctx.sequence++, this.yaw, this.pitch))
+  }
+
+  setFlying(flying: boolean): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundPlayerAbilitiesPacket(flying))
+    this.isFlying = flying
+  }
+
+  setCreativeModeSlot(slot: number, itemId: number, count: number, components?: any): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundSetCreativeModeSlotPacket(slot, {
+      type: "present",
+      item: { kind: itemId, count, component_patch: components ?? {} },
+    }))
+  }
+
+  tabComplete(text: string): Promise<string[]> {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    return new Promise((resolve) => {
+      const id = Math.floor(Math.random() * 2147483647)
+      const handler = (packet: any) => {
+        if (packet.transactionId === id) {
+          this.emitter.off("tabComplete", handler)
+          resolve(packet.matches.map((m: any) => m.match))
+        }
+      }
+      this.emitter.on("tabComplete", handler)
+      this.connection!.write(new play.ServerboundCommandSuggestionPacket(id, text))
+      setTimeout(() => {
+        this.emitter.off("tabComplete", handler)
+        resolve([])
+      }, 5000)
+    })
   }
 
   goto(x: number, y: number, z: number): void {
