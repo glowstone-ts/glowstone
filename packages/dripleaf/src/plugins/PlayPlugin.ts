@@ -39,6 +39,10 @@ export class PlayPlugin implements ClientPlugin {
       ctx.emit("chat", text, packet.sender)
     })
 
+    conn.onPacket(play.ClientboundDisguisedChatPacket, (packet) => {
+      ctx.emit("chat", toPlainText(packet.message), null)
+    })
+
     conn.onPacket(play.ClientboundSetHealthPacket, (packet) => {
       ctx.health = packet.health
       ctx.food = packet.food
