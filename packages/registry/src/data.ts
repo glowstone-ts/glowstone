@@ -180,9 +180,9 @@ const DialogRegistry = Registry.fromEnum<Dialog>("dialog", Dialog);
 
 enum DimensionType {
 	Overworld = "overworld",
-	OverworldCaves = "overworld_caves",
-	TheEnd = "the_end",
 	TheNether = "the_nether",
+	TheEnd = "the_end",
+	OverworldCaves = "overworld_caves",
 }
 
 const DimensionTypeRegistry = Registry.fromEnum<DimensionType>("dimension_type", DimensionType);
