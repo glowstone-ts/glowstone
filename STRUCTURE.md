@@ -12,8 +12,8 @@ TypeScript Minecraft **26.1** bot ecosystem (protocol **775**), inspired by [Aza
 | `@dripleaf/chat` | prismarine-chat | Chat components |
 | `@dripleaf/inventory` | prismarine-window | Windows, items |
 | `@dripleaf/block` | prismarine-block | Block state registry |
-| `@dripleaf/chunk` | prismarine-chunk | Chunk sections, palettes, chunk packet parsing |
-| `@dripleaf/world` | prismarine-world | Loaded world state, chunk storage, block queries |
+| `@dripleaf/chunk` | prismarine-chunk | Chunk keys, dimension bounds, sections, palettes, heightmaps |
+| `@dripleaf/world` | prismarine-world | Loaded world state, chunk storage, block/height queries, cache invalidation |
 | `@dripleaf/entity` | prismarine-entity | Entity metadata |
 | `@dripleaf/registry` | prismarine-registry | Identifiers, registries, tags |
 | `@dripleaf/physics` | azalea-physics (concepts) | Block passability for movement |
@@ -30,6 +30,8 @@ bun run codegen                           # packets, registries, embedded packag
 ```
 
 Codegen downloads the 26.1 server JAR into `codegen/cache/` (gitignored). Outputs are committed `.ts` files inside packages (Azalea-style). `azalea/` is an optional local reference checkout and is intentionally ignored, not tracked.
+
+`@dripleaf/world` re-exports chunk primitives from `@dripleaf/chunk` for compatibility. Chunk identity, section bounds, and heightmaps belong in `@dripleaf/chunk`; loaded-world queries and cache lifecycle belong in `@dripleaf/world`.
 
 ## Local server
 
