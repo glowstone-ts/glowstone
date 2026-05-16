@@ -485,7 +485,7 @@ async function main() {
         setTimeout(() => {
           conn.write(new play.ServerboundChatPacket(
             "Hello from dripleaf!",
-            BigInt(Date.now()), 0n, null,
+            { seconds: BigInt(Math.floor(Date.now() / 1000)) }, 0n, null,
             { offset: 0, acknowledged: new Uint8Array(3), checksum: 0 },
           ));
         }, 500);

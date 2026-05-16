@@ -5,7 +5,6 @@ import { DripleafPacket, packetCodec } from '../DripleafPacket';
 
 interface Instant {
 	seconds: bigint;
-	nanos: number;
 }
 
 interface LastSeenMessagesUpdate {
@@ -19,7 +18,6 @@ export class ServerboundChatPacket extends DripleafPacket {
 		encode(writer: PacketWriter, value: ServerboundChatPacket) {
 			writer.writeString(value.message, 256);
 			writer.writeLong(value.timestamp.seconds);
-			writer.writeInt(value.timestamp.nanos);
 			writer.writeLong(value.salt);
 			writer.writePrefixedOptional(value.signature, sig => writer.writeBytes(sig));
 			writer.writeVarInt(value.lastSeenMessages.offset);
@@ -29,7 +27,7 @@ export class ServerboundChatPacket extends DripleafPacket {
 		decode(reader: PacketReader): ServerboundChatPacket {
 			return new ServerboundChatPacket(
 				reader.readString(256),
-				{ seconds: reader.readLong(), nanos: reader.readInt() },
+				{ seconds: reader.readLong() },
 				reader.readLong(),
 				reader.readPrefixedOptional(() => reader.readBytes(256)),
 				{
