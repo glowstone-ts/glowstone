@@ -19,8 +19,8 @@ export class PlayPlugin implements ClientPlugin {
       }
       ctx.world = new World(dim)
       ctx.pathfinder = new Pathfinder(pathWorldFromDripleaf(ctx.world))
-      ctx.emit("spawn", packet)
       conn.write(new play.ServerboundPlayerLoadedPacket())
+      ctx.emit("spawn", packet)
     })
 
     conn.onPacket(play.ClientboundDisconnectPacket, (packet) => {
