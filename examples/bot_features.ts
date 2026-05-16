@@ -28,7 +28,7 @@ bot.on("health", (health, food, saturation) => {
   console.log(`health: ${health}, food: ${food}, saturation: ${saturation}`)
 })
 
-bot.on("chat", (message, sender) => {
+bot.on("chat", (sender, message) => {
   const text = toPlainText(message)
   const senderName = sender ? toPlainText(sender) : "server"
   console.log(`chat [${senderName}]:`, text)

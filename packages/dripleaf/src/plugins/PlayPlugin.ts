@@ -58,16 +58,16 @@ export class PlayPlugin implements ClientPlugin {
     })
 
     conn.onPacket(play.ClientboundSystemChatPacket, (packet) => {
-      ctx.emit("chat", packet.content, null)
+      ctx.emit("chat", null, packet.content)
     })
 
     conn.onPacket(play.ClientboundPlayerChatPacket, (packet) => {
       const message = packet.unsignedContent ?? { text: packet.body.content }
-      ctx.emit("chat", message, packet.chatType.name)
+      ctx.emit("chat", packet.chatType.name, message)
     })
 
     conn.onPacket(play.ClientboundDisguisedChatPacket, (packet) => {
-      ctx.emit("chat", packet.message, packet.chatType.name)
+      ctx.emit("chat", packet.chatType.name, packet.message)
     })
 
     conn.onPacket(play.ClientboundSetHealthPacket, (packet) => {

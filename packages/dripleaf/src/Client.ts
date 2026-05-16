@@ -17,7 +17,7 @@ import type { ChatComponent } from "@dripleaf/chat"
 type ClientEvents = {
   spawn: (packet: play.ClientboundLoginPacket) => void
   respawn: (packet: play.ClientboundRespawnPacket) => void
-  chat: (message: ChatComponent, sender: ChatComponent | null) => void
+  chat: (sender: ChatComponent | null, message: ChatComponent) => void
   disconnect: (reason: string) => void
   error: (error: Error) => void
   end: () => void

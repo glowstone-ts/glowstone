@@ -11,7 +11,7 @@ bot.on("spawn", () => {
   bot.chat("Hello from dripleaf!")
 })
 
-bot.on("chat", (message, sender) => {
+bot.on("chat", (sender, message) => {
   const senderName = sender ? toPlainText(sender) : "server"
   console.log(`chat [${senderName}]:`, toPlainText(message))
 })
