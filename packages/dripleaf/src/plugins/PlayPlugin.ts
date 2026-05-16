@@ -1,4 +1,4 @@
-import { play } from "@dripleaf/protocol"
+import { Connection, play } from "@dripleaf/protocol"
 import { World, type Dimension } from "@dripleaf/world"
 import { Pathfinder } from "@dripleaf/pathfinder"
 import { pathWorldFromDripleaf } from "@dripleaf/pathfinder/dripleaf"
@@ -9,7 +9,7 @@ import type { ClientPlugin } from "./types"
 export class PlayPlugin implements ClientPlugin {
   readonly name = "play"
 
-  register(ctx: ClientContext, conn: import("@dripleaf/protocol").Connection): void {
+  register(ctx: ClientContext, conn: Connection): void {
     conn.onPacket(play.ClientboundLoginPacket, (packet) => {
       ctx.entityId = packet.entityId
       ctx.loggedIn = true
