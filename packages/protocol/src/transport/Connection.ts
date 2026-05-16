@@ -93,19 +93,26 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     const decrypted = this.decipher ? this.decipher.update(chunk) : chunk;
     this.buffer = concatBytes(this.buffer, decrypted);
 
-    try {
-      for (;;) {
-        const frame = this.tryReadFrame();
-        if (!frame)
-          return;
+    for (;;) {
+      const frame = this.tryReadFrame();
+      if (!frame)
+        return;
 
-        const packet = this.decodePacket(frame);
+      let packet: DripleafPacket;
+      try {
+        packet = this.decodePacket(frame);
+      } catch (error) {
+        this.emit("error", error instanceof Error ? error : new Error(String(error)));
+        continue;
+      }
+
+      try {
         this.emit("packet", packet);
         this.packetListeners.get(packet.constructor as PacketConstructor)?.forEach(listener => listener(packet));
         this.maybeApplyProtocolSideEffects(packet);
+      } catch (error) {
+        this.emit("error", error instanceof Error ? error : new Error(String(error)));
       }
-    } catch (error) {
-      this.emit("error", error instanceof Error ? error : new Error(String(error)));
     }
   }
 
