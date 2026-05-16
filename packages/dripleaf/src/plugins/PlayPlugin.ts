@@ -205,7 +205,7 @@ export class PlayPlugin implements ClientPlugin {
         centerZ: packet.z,
         diameter: packet.oldDiameter,
         targetDiameter: packet.newDiameter,
-        speed: packet.speed,
+        speed: Number(packet.speed),
         warningBlocks: packet.warningBlocks,
         warningTime: packet.warningTime,
       }

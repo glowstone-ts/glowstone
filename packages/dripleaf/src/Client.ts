@@ -404,7 +404,7 @@ export class Client {
 
   respawn(): void {
     if (!this.connection || !this.loggedIn) throw new Error("Not connected")
-    this.connection.write(new play.ServerboundClientCommandPacket(0 as any))
+    this.connection.write(new play.ServerboundClientCommandPacket("perform_respawn" as any))
   }
 
   interactEntity(entityId: number, hand: InteractionHand = InteractionHand.MainHand, location?: { x: number; y: number; z: number }): void {

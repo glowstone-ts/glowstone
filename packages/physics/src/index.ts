@@ -13,6 +13,14 @@ export type BlockClassification = {
   water: boolean
 }
 
+const DANGEROUS_BLOCKS = new Set([
+  BlockType.Lava,
+  BlockType.Fire,
+  BlockType.SoulFire,
+  BlockType.SweetBerryBush,
+  BlockType.PowderSnow,
+])
+
 export function classifyBlock(block: BlockLike | undefined): BlockClassification {
   if (!block) return { passable: false, solid: false, standable: false, water: false }
 
@@ -24,17 +32,14 @@ export function classifyBlock(block: BlockLike | undefined): BlockClassification
     return { passable: true, solid: false, standable: false, water: false }
 
   const water = type === BlockType.Water || shortName === "water" || p.waterlogged === true
-  const dangerous =
-    type === BlockType.Lava ||
-    shortName === "lava" ||
-    type === BlockType.Fire ||
-    type === BlockType.SoulFire ||
-    type === BlockType.SweetBerryBush ||
-    type === BlockType.PowderSnow
+  const dangerous = DANGEROUS_BLOCKS.has(type as BlockType)
 
   const slab = p.type === "top" || p.type === "bottom" || p.type === "double"
   const stair = shortName.endsWith("_stairs")
-  const fullCube = !slab && !stair && type !== BlockType.Snow && !shortName.includes("flower") && !shortName.includes("sign")
+  const nonFull = shortName.includes("slab") || shortName.endsWith("_carpet") || shortName === "snow"
+  const passableBlock = shortName.endsWith("_fence") || shortName.endsWith("_bars") || shortName.endsWith("_pane") || shortName.endsWith("_door")
+
+  const fullCube = !slab && !stair && !nonFull && !passableBlock && !water && !dangerous
 
   const passable = !fullCube && !water && !dangerous
   const solid = (fullCube || p.type === "top" || p.type === "double") && type !== BlockType.MagmaBlock

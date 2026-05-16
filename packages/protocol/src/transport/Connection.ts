@@ -122,6 +122,9 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
       return null;
 
     const [frameLength, offset] = lengthInfo;
+    if (frameLength > 8388608)
+      throw new Error(`Frame too large: ${frameLength}`);
+
     const totalLength = offset + frameLength;
     if (this.buffer.length < totalLength)
       return null;

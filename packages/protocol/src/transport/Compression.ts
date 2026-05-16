@@ -1,6 +1,8 @@
 import { deflateSync, inflateSync } from "node:zlib";
 import { PacketReader, PacketWriter } from "../buffer";
 
+const MAX_UNCOMPRESSED_LENGTH = 8388608;
+
 export function encodePacketFrame(packetBody: Uint8Array, compressionThreshold = -1): Uint8Array {
   const payload = compressionThreshold >= 0
     ? encodeCompressedBody(packetBody, compressionThreshold)
@@ -25,6 +27,9 @@ export function decodePacketBody(framePayload: Uint8Array, compressionThreshold 
 
   if (uncompressedLength < compressionThreshold)
     throw new Error(`Compressed packet below threshold: ${uncompressedLength} < ${compressionThreshold}`);
+
+  if (uncompressedLength > MAX_UNCOMPRESSED_LENGTH)
+    throw new Error(`Decompressed packet too large: ${uncompressedLength} > ${MAX_UNCOMPRESSED_LENGTH}`);
 
   const packetBody = inflateSync(compressedBytes);
   if (packetBody.length !== uncompressedLength)

@@ -20,6 +20,8 @@ export class BlockData {
   ) {}
 }
 
+const blockDataCache = new Map<number, BlockData>()
+
 export class BlockRegistry {
   static #instance: BlockRegistry | undefined
 
@@ -32,9 +34,14 @@ export class BlockRegistry {
   }
 
   getBlock(stateId: number): BlockData | undefined {
+    const cached = blockDataCache.get(stateId)
+    if (cached) return cached
+
     const entry = STATE_BY_ID.get(stateId)
     if (!entry) return undefined
-    return new BlockData(entry.type, entry.properties, stateId)
+    const blockData = new BlockData(entry.type, entry.properties, stateId)
+    blockDataCache.set(stateId, blockData)
+    return blockData
   }
 
   getStateId(type: BlockType, properties: BlockProperties = {}): number | undefined {

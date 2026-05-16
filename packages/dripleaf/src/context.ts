@@ -61,7 +61,7 @@ export type ClientContext = {
     centerZ: number
     diameter: number
     targetDiameter: number
-    speed: number | bigint
+    speed: number
     warningBlocks: number
     warningTime: number
   }
