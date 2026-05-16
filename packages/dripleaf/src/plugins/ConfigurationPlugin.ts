@@ -20,6 +20,18 @@ export class ConfigurationPlugin implements ClientPlugin {
       ctx.registries.applyUpdateTags(packet.registries)
     })
 
+    let sentClientInfo = false
+    conn.onPacket(configuration.ClientboundSelectKnownPacksPacket, (packet) => {
+      conn.write(new configuration.ServerboundSelectKnownPacksPacket(packet.knownPacks))
+      if (!sentClientInfo) {
+        sentClientInfo = true
+        conn.write(new configuration.ServerboundClientInformationPacket(
+          "en_us", 24, ChatVisibility.Full, true, 0,
+          HumanoidArm.Right, false, true, ParticleStatus.All,
+        ))
+      }
+    })
+
     conn.onPacket(configuration.ClientboundFinishConfigurationPacket, () => {
       conn.write(new configuration.ServerboundFinishConfigurationPacket())
       conn.setState(State.Play)

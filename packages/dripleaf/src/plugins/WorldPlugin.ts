@@ -21,6 +21,7 @@ export class WorldPlugin implements ClientPlugin {
       if (!ctx.world) return
       applyLevelChunk(ctx.world.chunks, packet.x, packet.z, packet.chunkData.data, undefined, packet.chunkData.heightmaps)
       ctx.world.cache.invalidateChunk(packet.x, packet.z)
+      ctx.world.cache.invalidateSection(packet.x, packet.z)
     })
 
     conn.onPacket(play.ClientboundBlockUpdatePacket, (packet) => {
