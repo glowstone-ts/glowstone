@@ -64,14 +64,18 @@ export function indexToPos(index: number): { x: number; y: number; z: number } {
 
 function readLong(buffer: Uint8Array, offset: number): bigint {
   let value = 0n
-  for (let i = 0; i < 8; i++)
-    value |= BigInt(buffer[offset + i]!) << BigInt(i * 8)
+  for (let i = 0; i < 8; i++) {
+    const byte = offset + i < buffer.length ? buffer[offset + i]! : 0
+    value |= BigInt(byte) << BigInt(i * 8)
+  }
   return value
 }
 
 function writeLong(buffer: Uint8Array, offset: number, value: bigint): void {
-  for (let i = 0; i < 8; i++)
-    buffer[offset + i] = Number((value >> BigInt(i * 8)) & 0xffn)
+  for (let i = 0; i < 8; i++) {
+    if (offset + i < buffer.length)
+      buffer[offset + i] = Number((value >> BigInt(i * 8)) & 0xffn)
+  }
 }
 
 function readEntry(buffer: Uint8Array, index: number, bitsPerEntry: number): number {
@@ -486,48 +490,52 @@ export function parseChunkSections(data: Uint8Array, count = SECTION_COUNT, minS
   const sections: (ChunkSection | null)[] = []
 
   for (let i = 0; i < count; i++) {
-    const section = new ChunkSection(minSectionY + i)
+    try {
+      const section = new ChunkSection(minSectionY + i)
 
-    if (reader.remaining <= 0) {
+      if (reader.remaining <= 0) {
+        sections.push(null)
+        continue
+      }
+
+      section.blockCount = reader.readUnsignedShort()
+      const bpe = reader.readUnsignedByte()
+
+      if (bpe === 0) {
+        const state = reader.readVarInt()
+        section.palette = createSingletonPalette(state)
+        section.states = new Uint8Array(0)
+      } else if (bpe <= 8) {
+        const paletteLen = reader.readVarInt()
+        const ids: number[] = []
+        for (let j = 0; j < paletteLen; j++) ids.push(reader.readVarInt())
+        section.palette = createLinearPalette(ids)
+        const dataLongs = reader.readVarInt()
+        section.states = swappedLongs(reader.readBytes(dataLongs * 8))
+      } else {
+        const dataLongs = reader.readVarInt()
+        section.palette = createIdentityPalette(bpe)
+        section.states = swappedLongs(reader.readBytes(dataLongs * 8))
+      }
+
+      const biomeBits = reader.readUnsignedByte()
+
+      if (biomeBits === 0) {
+        section.biomePalette = createSingletonPalette(reader.readVarInt())
+        section.biomes = new Uint8Array(0)
+      } else {
+        const paletteLen = reader.readVarInt()
+        const ids: number[] = []
+        for (let j = 0; j < paletteLen; j++) ids.push(reader.readVarInt())
+        section.biomePalette = createBiomePalette(ids)
+        const dataLongs = reader.readVarInt()
+        section.biomes = swappedLongs(reader.readBytes(dataLongs * 8))
+      }
+
+      sections.push(section)
+    } catch {
       sections.push(null)
-      continue
     }
-
-    section.blockCount = reader.readUnsignedShort()
-    const bpe = reader.readUnsignedByte()
-
-    if (bpe === 0) {
-      const state = reader.readVarInt()
-      section.palette = createSingletonPalette(state)
-      section.states = new Uint8Array(0)
-    } else if (bpe <= 8) {
-      const paletteLen = reader.readVarInt()
-      const ids: number[] = []
-      for (let j = 0; j < paletteLen; j++) ids.push(reader.readVarInt())
-      section.palette = createLinearPalette(ids)
-      const dataLongs = reader.readVarInt()
-      section.states = swappedLongs(reader.readBytes(dataLongs * 8))
-    } else {
-      const dataLongs = reader.readVarInt()
-      section.palette = createIdentityPalette(bpe)
-      section.states = swappedLongs(reader.readBytes(dataLongs * 8))
-    }
-
-    const biomeBits = reader.readUnsignedByte()
-
-    if (biomeBits === 0) {
-      section.biomePalette = createSingletonPalette(reader.readVarInt())
-      section.biomes = new Uint8Array(0)
-    } else {
-      const paletteLen = reader.readVarInt()
-      const ids: number[] = []
-      for (let j = 0; j < paletteLen; j++) ids.push(reader.readVarInt())
-      section.biomePalette = createBiomePalette(ids)
-      const dataLongs = reader.readVarInt()
-      section.biomes = swappedLongs(reader.readBytes(dataLongs * 8))
-    }
-
-    sections.push(section)
   }
 
   return sections
