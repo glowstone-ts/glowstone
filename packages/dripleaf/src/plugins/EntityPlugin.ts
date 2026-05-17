@@ -82,5 +82,15 @@ export class EntityPlugin implements ClientPlugin {
       if (rel.xRot) entity.pitch += change.pitch
       else entity.pitch = change.pitch
     })
+
+    conn.onPacket(play.ClientboundRotateHeadPacket, (packet) => {
+      const entity = ctx.entities.get(packet.entityId)
+      if (!entity) return
+      entity.headYaw = packet.headYaw
+    })
+
+    conn.onPacket(play.ClientboundAnimatePacket, (packet) => {
+      ctx.emit("entityAnimate", packet.entityId, packet.animation)
+    })
   }
 }

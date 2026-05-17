@@ -288,5 +288,9 @@ export class PlayPlugin implements ClientPlugin {
       ctx.itemCooldowns.set(packet.cooldownGroup, packet.cooldownTicks)
       ctx.emit("itemCooldown", packet.cooldownGroup, packet.cooldownTicks)
     })
+
+    conn.onPacket(play.ClientboundTabListPacket, (packet) => {
+      ctx.emit("tabList", packet.header, packet.footer)
+    })
   }
 }

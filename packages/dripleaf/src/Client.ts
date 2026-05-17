@@ -36,9 +36,11 @@ type ClientEvents = {
   spawnPosition: (position: Vec3) => void
   entityEvent: (entityId: number, eventId: number) => void
   itemCooldown: (itemId: string, ticks: number) => void
+  tabList: (header: ChatComponent, footer: ChatComponent) => void
   heldItemChange: (slot: number) => void
   entitySpawn: (entity: EntityData) => void
   entityDespawn: (entityId: number) => void
+  entityAnimate: (entityId: number, animation: number) => void
   windowOpen: (window: Window) => void
   windowClose: (window: Window) => void
   playerJoin: (player: { uuid: string; name: string }) => void
@@ -227,6 +229,11 @@ export class Client {
     return this
   }
 
+  once<K extends keyof ClientEvents>(event: K, listener: ClientEvents[K]): this {
+    this.emitter.once(event, listener as (...args: unknown[]) => void)
+    return this
+  }
+
   off<K extends keyof ClientEvents>(event: K, listener: ClientEvents[K]): this {
     this.emitter.off(event, listener as (...args: unknown[]) => void)
     return this
@@ -400,6 +407,26 @@ export class Client {
     const id = windowId ?? this.currentWindowId
     if (id === null || id === 0) return
     this.connection.write(new play.ServerboundContainerClosePacket(id))
+  }
+
+  startSprint(): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundPlayerCommandPacket(this.entityId, "start_sprint" as any, 0))
+  }
+
+  stopSprint(): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundPlayerCommandPacket(this.entityId, "stop_sprint" as any, 0))
+  }
+
+  startCrouch(): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundPlayerCommandPacket(this.entityId, "start_sneaking" as any, 0))
+  }
+
+  stopCrouch(): void {
+    if (!this.connection || !this.loggedIn) throw new Error("Not connected")
+    this.connection.write(new play.ServerboundPlayerCommandPacket(this.entityId, "stop_sneaking" as any, 0))
   }
 
   respawn(): void {
