@@ -1,4 +1,5 @@
 import { type PacketReader, type PacketWriter, Codecs } from '../../buffer';
+import { DataComponentPatchCodec } from '../../datatypes';
 import { DripleafPacket, packetCodec } from '../DripleafPacket';
 
 export type RecipeBookEntry = {
@@ -32,6 +33,16 @@ function writeEntry(writer: PacketWriter, entry: RecipeBookEntry) {
   writer.writeByte(entry.flags);
 }
 
+function skipItemStackTemplate(reader: PacketReader) {
+  const holderId = reader.readVarInt()
+  if (holderId === 0) {
+    reader.readString()
+  }
+  const count = reader.readVarInt()
+  if (count <= 0) return
+  DataComponentPatchCodec.decode(reader)
+}
+
 function skipSlotDisplay(reader: PacketReader) {
   const type = reader.readVarInt();
   switch (type) {
@@ -40,7 +51,7 @@ function skipSlotDisplay(reader: PacketReader) {
     case 2: skipSlotDisplay(reader); break;
     case 3: skipSlotDisplay(reader); reader.readVarInt(); break;
     case 4: reader.readVarInt(); break;
-    case 5: reader.readCodec(Codecs.nbt); break;
+    case 5: skipItemStackTemplate(reader); break;
     case 6: reader.readIdentifier(); break;
     case 7: skipSlotDisplay(reader); skipSlotDisplay(reader); break;
     case 8: skipSlotDisplay(reader); skipSlotDisplay(reader); reader.readVarInt(); break;
