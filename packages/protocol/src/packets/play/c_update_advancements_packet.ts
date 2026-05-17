@@ -36,7 +36,6 @@ export type AdvancementData = {
 	parentId: Identifier | null;
 	display: DisplayInfo | null;
 	requirements: string[][];
-	sendsTelemetryEvent: boolean;
 };
 
 export type AdvancementHolderData = {
@@ -95,7 +94,6 @@ function encodeAdvancement(writer: PacketWriter, value: AdvancementData) {
 		writer.writeVarInt(group.length);
 		for (const criterion of group) writer.writeString(criterion);
 	}
-	writer.writeBoolean(value.sendsTelemetryEvent);
 }
 
 function decodeAdvancement(reader: PacketReader): AdvancementData {
@@ -109,8 +107,7 @@ function decodeAdvancement(reader: PacketReader): AdvancementData {
 		for (let j = 0; j < groupCount; j++) group.push(reader.readString());
 		requirements.push(group);
 	}
-	const sendsTelemetryEvent = reader.readBoolean();
-	return { parentId, display, requirements, sendsTelemetryEvent };
+	return { parentId, display, requirements };
 }
 
 function encodeAdvancementHolder(writer: PacketWriter, value: AdvancementHolderData) {
@@ -141,7 +138,6 @@ export class ClientboundUpdateAdvancementsPacket extends DripleafPacket {
 					encodeCriterionProgress(writer, criterionProgress);
 				}
 			}
-			writer.writeBoolean(value.showAdvancements);
 		},
 		decode(reader: PacketReader): ClientboundUpdateAdvancementsPacket {
 			const reset = reader.readBoolean();
@@ -164,8 +160,7 @@ export class ClientboundUpdateAdvancementsPacket extends DripleafPacket {
 				}
 				progress.set(id, criteria);
 			}
-			const showAdvancements = reader.readBoolean();
-			return new ClientboundUpdateAdvancementsPacket(reset, added, removed, progress, showAdvancements);
+			return new ClientboundUpdateAdvancementsPacket(reset, added, removed, progress);
 		},
 	});
 
@@ -174,7 +169,6 @@ export class ClientboundUpdateAdvancementsPacket extends DripleafPacket {
 		public added: AdvancementHolderData[],
 		public removed: Identifier[],
 		public progress: Map<Identifier, AdvancementProgress>,
-		public showAdvancements: boolean,
 	) {
 		super();
 	}
