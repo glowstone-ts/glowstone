@@ -7,7 +7,6 @@ import { WorldPlugin } from "./WorldPlugin"
 import { EntityPlugin } from "./EntityPlugin"
 import { InventoryPlugin } from "./InventoryPlugin"
 import { MiningPlugin } from "./MiningPlugin"
-import { PathfinderPlugin } from "./PathfinderPlugin"
 import { TickPlugin } from "./TickPlugin"
 
 export const defaultPlugins: ClientPlugin[] = [
@@ -18,7 +17,6 @@ export const defaultPlugins: ClientPlugin[] = [
   new EntityPlugin(),
   new InventoryPlugin(),
   new MiningPlugin(),
-  new PathfinderPlugin(),
   new TickPlugin(),
 ]
 
@@ -31,9 +29,7 @@ export {
   EntityPlugin,
   InventoryPlugin,
   MiningPlugin,
-  PathfinderPlugin,
   TickPlugin,
 }
-export { goto, stopPathfinding } from "./PathfinderPlugin"
 export { startMining, finishMining, stopMining } from "./MiningPlugin"
 export type { ClientPlugin } from "./types"

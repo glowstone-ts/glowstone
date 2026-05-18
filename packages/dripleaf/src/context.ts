@@ -4,7 +4,6 @@ import type { World } from "@dripleaf/world"
 import type { EntityData } from "@dripleaf/entity"
 import type { Window, ItemStack } from "@dripleaf/inventory"
 import type { RegistryManager } from "@dripleaf/registry"
-import type { Pathfinder } from "@dripleaf/pathfinder"
 import type { EventEmitter } from "node:events"
 import type { Vec3 } from "vec3"
 
@@ -36,7 +35,6 @@ export type ClientContext = {
   equipment: Map<number, EquipmentEntry[]>
   registries: RegistryManager
   chunkBatchSize: number
-  pathfinder: Pathfinder | null
   mining: { pos: BlockPos; face: import("@dripleaf/protocol").BlockFace } | null
   players: Map<string, { uuid: string; name: string }>
   emitter: EventEmitter

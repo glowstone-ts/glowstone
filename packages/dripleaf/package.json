@@ -22,7 +22,6 @@
     "@dripleaf/world": "workspace:*",
     "@dripleaf/item": "workspace:*",
     "@dripleaf/recipe": "workspace:*",
-    "@dripleaf/pathfinder": "workspace:*",
     "@dripleaf/physics": "workspace:*",
     "vec3": "^0.2.0"
   }

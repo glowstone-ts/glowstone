@@ -9,9 +9,8 @@ import { Window, simulateClick, ClickType } from "@dripleaf/inventory"
 import { RegistryManager } from "@dripleaf/registry"
 import type { World } from "@dripleaf/world"
 import type { EntityData } from "@dripleaf/entity"
-import type { Pathfinder, PathResult } from "@dripleaf/pathfinder"
 import type { ClientContext, EquipmentEntry } from "./context"
-import { defaultPlugins, ConnectionPlugin, goto as gotoPath, stopPathfinding, startMining, finishMining, stopMining } from "./plugins"
+import { defaultPlugins, ConnectionPlugin, startMining, finishMining, stopMining } from "./plugins"
 import type { ChatComponent } from "@dripleaf/chat"
 
 type ClientEvents = {
@@ -45,8 +44,6 @@ type ClientEvents = {
   windowClose: (window: Window) => void
   playerJoin: (player: { uuid: string; name: string }) => void
   playerLeave: (player: { uuid: string; name: string }) => void
-  pathFound: (result: PathResult) => void
-  pathStop: () => void
   scoreboardObjective: (action: number, name: string, displayName: ChatComponent | null) => void
   scoreboardScore: (objectiveName: string, itemName: string, value: number | null) => void
   scoreboardDisplay: (position: number, objectiveName: string) => void
@@ -126,7 +123,6 @@ export class Client {
   heldItem = 0
   equipment: Map<number, EquipmentEntry[]> = new Map()
 
-  pathfinder: Pathfinder | null = null
   readonly registries = new RegistryManager()
 
   constructor(username: string) {
@@ -173,8 +169,6 @@ export class Client {
       get equipment() { return client.equipment },
       get registries() { return client.registries },
       chunkBatchSize: 0,
-      get pathfinder() { return client.pathfinder },
-      set pathfinder(v) { client.pathfinder = v },
       mining: null,
       get players() { return client.players },
       get gameMode() { return client.gameMode },

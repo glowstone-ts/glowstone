@@ -1,7 +1,6 @@
 import { play } from "@dripleaf/protocol"
 import type { ClientContext } from "../context"
 import type { ClientPlugin } from "./types"
-import { tickPathfinder } from "./PathfinderPlugin"
 
 export class TickPlugin implements ClientPlugin {
   readonly name = "tick"
@@ -13,7 +12,6 @@ export class TickPlugin implements ClientPlugin {
       if (!ctx.loggedIn) return
       try {
         conn.write(new play.ServerboundClientTickEndPacket())
-        tickPathfinder(ctx, conn)
 
         if (ctx.attackCooldown > 0) ctx.attackCooldown--
 

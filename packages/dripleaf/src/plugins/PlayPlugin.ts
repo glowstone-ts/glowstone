@@ -1,7 +1,5 @@
 import { Connection, GameEvent, play } from "@dripleaf/protocol"
 import { World, type Dimension } from "@dripleaf/world"
-import { Pathfinder } from "@dripleaf/pathfinder"
-import { pathWorldFromDripleaf } from "@dripleaf/pathfinder/dripleaf"
 import { toPlainText } from "@dripleaf/chat"
 import type { ClientContext } from "../context"
 import type { ClientPlugin } from "./types"
@@ -20,7 +18,6 @@ export class PlayPlugin implements ClientPlugin {
         identifier: packet.commonPlayerSpawnInfo.dimension.toString(),
       }
       ctx.world = new World(dim)
-      ctx.pathfinder = new Pathfinder(pathWorldFromDripleaf(ctx.world))
       ctx.gameMode = packet.commonPlayerSpawnInfo.gameType
       ctx.position.set(0, 0, 0)
       ctx.velocity.set(0, 0, 0)
@@ -35,7 +32,6 @@ export class PlayPlugin implements ClientPlugin {
         identifier: packet.commonPlayerSpawnInfo.dimension.toString(),
       }
       ctx.world = new World(dim)
-      ctx.pathfinder = new Pathfinder(pathWorldFromDripleaf(ctx.world))
       ctx.previousGameMode = ctx.gameMode
       ctx.gameMode = packet.commonPlayerSpawnInfo.gameType
       ctx.position.set(0, 0, 0)
