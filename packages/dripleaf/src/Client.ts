@@ -472,14 +472,6 @@ export class Client {
     })
   }
 
-  goto(x: number, y: number, z: number): void {
-    gotoPath(this.ctx, new BlockPos(x, y, z))
-  }
-
-  stopPathfinding(): void {
-    stopPathfinding(this.ctx)
-  }
-
   disconnect(): void {
     this.connection?.disconnect()
   }
