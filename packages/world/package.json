@@ -1,0 +1,22 @@
+{
+  "name": "@dripleaf/world",
+  "module": "src/index.ts",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@dripleaf/chunk": "workspace:*",
+    "@dripleaf/core": "workspace:*",
+    "@dripleaf/block": "workspace:*",
+    "@dripleaf/entity": "workspace:*",
+    "@dripleaf/registry": "workspace:*",
+    "@dripleaf/protocol": "workspace:*"
+  }
+}

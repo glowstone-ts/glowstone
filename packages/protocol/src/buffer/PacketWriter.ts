@@ -12,7 +12,7 @@ const INT_MAX = 2147483647;
 const LONG_MIN = -(1n << 63n);
 const LONG_MAX = (1n << 63n) - 1n;
 const UUID_MAX = (1n << 128n) - 1n;
-const IDENTIFIER_PATTERN = /^[0-9a-z._-]+:[0-9a-z._\-\/]+$/;
+const IDENTIFIER_PATTERN = /^([0-9a-z._-]+:)?[0-9a-z._\-\/]+$/;
 
 export class PacketWriter {
   private readonly chunks: number[] = [];
@@ -117,8 +117,12 @@ export class PacketWriter {
     const number = BigInt(`0x${normalized}`);
     this.range("UUID", number, 0n, UUID_MAX);
 
-    const msb = (number >> 64n) & ((1n << 64n) - 1n);
-    const lsb = number & ((1n << 64n) - 1n);
+    const mask64 = (1n << 64n) - 1n;
+    let msb = (number >> 64n) & mask64;
+    let lsb = number & mask64;
+
+    if (msb >= (1n << 63n)) msb -= (1n << 64n);
+    if (lsb >= (1n << 63n)) lsb -= (1n << 64n);
 
     this.writeLong(msb);
     this.writeLong(lsb);
@@ -128,6 +132,12 @@ export class PacketWriter {
     this.writeDouble(pos.x);
     this.writeDouble(pos.y);
     this.writeDouble(pos.z);
+  }
+
+  writeVec3f(pos: Vec3) {
+    this.writeFloat(pos.x);
+    this.writeFloat(pos.y);
+    this.writeFloat(pos.z);
   }
 
   writeLpVec3(value: Vec3) {
@@ -181,6 +191,15 @@ export class PacketWriter {
     const nbtWriter = new NbtWriter();
     nbtWriter.writePayload(value.type, value.value);
     this.writeBytes(nbtWriter.finish());
+  }
+
+  writeOptionalNbt(value: Omit<NbtTag, "name"> | null) {
+    if (value == null) {
+      this.writeUnsignedByte(0);
+      return;
+    }
+
+    this.writeNbt(value);
   }
 
   writeEither<L, R>(

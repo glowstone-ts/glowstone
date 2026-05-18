@@ -5,7 +5,7 @@ import { DripleafPacket, packetCodec } from '../DripleafPacket';
 
 export class ClientboundKeepAlivePacket extends DripleafPacket {
 	static readonly codec = packetCodec(ClientboundKeepAlivePacket, {
-		keepAliveId: Codecs.varLong,
+		keepAliveId: Codecs.long,
 	});
 
 	constructor(

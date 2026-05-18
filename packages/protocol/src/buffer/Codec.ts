@@ -41,7 +41,7 @@ export const Codecs = {
   double: primitive<number>((writer, value) => writer.writeDouble(value), reader => reader.readDouble()),
   varInt: primitive<number>((writer, value) => writer.writeVarInt(value), reader => reader.readVarInt()),
   varLong: primitive<bigint>((writer, value) => writer.writeVarLong(value), reader => reader.readVarLong()),
-  containerId: primitive<number>((writer, value) => writer.writeVarInt(value), reader => reader.readVarInt()),
+  containerId: primitive<number>((writer, value) => writer.writeByte(value), reader => reader.readByte()),
   string(maxLength = 32767): Codec<string> {
     return primitive<string>((writer, value) => writer.writeString(value, maxLength), reader => reader.readString(maxLength));
   },
@@ -52,6 +52,7 @@ export const Codecs = {
     return primitive<Uint8Array>((writer, value) => writer.writeByteArray(value, maxLength), reader => reader.readByteArray(maxLength));
   },
   vec3d: primitive<Vec3>((writer, value) => writer.writeVec3d(value), reader => reader.readVec3d()),
+  vec3f: primitive<Vec3>((writer, value) => writer.writeVec3f(value), reader => reader.readVec3f()),
   lpVec3: primitive<Vec3>((writer, value) => writer.writeLpVec3(value), reader => reader.readLpVec3()),
   bitSet: primitive<bigint[]>((writer, value) => writer.writeBitSet(value), reader => reader.readBitSet()),
   fixedBitSet(byteLength: number): Codec<Uint8Array> {

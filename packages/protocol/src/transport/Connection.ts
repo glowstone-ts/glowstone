@@ -1,5 +1,6 @@
 // This file was inspired by https://github.com/janispritzkau/mcproto so yeah shoutout!!
 import { EventEmitter } from "node:events";
+import { createCipheriv, createDecipheriv } from "node:crypto";
 import type { Socket } from "node:net";
 import type TypedEmitter from "typed-emitter";
 import { concatBytes, PacketReader, PacketWriter, toUint8Array } from "../buffer";
@@ -27,6 +28,8 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
 
   private readonly incomingDirection: Direction;
   private buffer: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
+  private cipher: ReturnType<typeof createCipheriv> | null = null;
+  private decipher: ReturnType<typeof createDecipheriv> | null = null;
   private readonly packetListeners = new Map<PacketConstructor, Set<PacketListener<DripleafPacket>>>();
 
   constructor(
@@ -52,7 +55,7 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     bodyWriter.writeVarInt(definition.id);
     definition.packet.codec.encode(bodyWriter, packet);
     const frame = encodePacketFrame(bodyWriter.finish(), this.compressionThreshold);
-    this.socket.write(frame);
+    this.socket.write(this.cipher ? this.cipher.update(frame) : frame);
   }
 
   onPacket<T extends DripleafPacket>(packetType: PacketConstructor<T>, listener: PacketListener<T>) {
@@ -77,26 +80,39 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     this.emit("compressionThreshold", this.compressionThreshold);
   }
 
+  enableEncryption(sharedSecret: Uint8Array) {
+    this.cipher = createCipheriv("aes-128-cfb8", sharedSecret, sharedSecret);
+    this.decipher = createDecipheriv("aes-128-cfb8", sharedSecret, sharedSecret);
+  }
+
   disconnect() {
     this.socket.end();
   }
 
   private handleData(chunk: Uint8Array) {
-    this.buffer = concatBytes(this.buffer, chunk);
+    const decrypted = this.decipher ? this.decipher.update(chunk) : chunk;
+    this.buffer = concatBytes(this.buffer, decrypted);
 
-    try {
-      for (;;) {
-        const frame = this.tryReadFrame();
-        if (!frame)
-          return;
+    for (;;) {
+      const frame = this.tryReadFrame();
+      if (!frame)
+        return;
 
-        const packet = this.decodePacket(frame);
+      let packet: DripleafPacket;
+      try {
+        packet = this.decodePacket(frame);
+      } catch (error) {
+        this.emit("error", error instanceof Error ? error : new Error(String(error)));
+        continue;
+      }
+
+      try {
         this.emit("packet", packet);
         this.packetListeners.get(packet.constructor as PacketConstructor)?.forEach(listener => listener(packet));
         this.maybeApplyProtocolSideEffects(packet);
+      } catch (error) {
+        this.emit("error", error instanceof Error ? error : new Error(String(error)));
       }
-    } catch (error) {
-      this.emit("error", error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -106,6 +122,9 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
       return null;
 
     const [frameLength, offset] = lengthInfo;
+    if (frameLength > 8388608)
+      throw new Error(`Frame too large: ${frameLength}`);
+
     const totalLength = offset + frameLength;
     if (this.buffer.length < totalLength)
       return null;
@@ -124,7 +143,12 @@ export class Connection extends (EventEmitter as new () => TypedEmitter<Events>)
     if (!packetType)
       throw new Error(`Unknown packet 0x${packetId.toString(16)} for ${this.state}/${this.incomingDirection}`);
 
-    return packetType.codec.decode(reader);
+    try {
+      return packetType.codec.decode(reader);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to decode ${packetType.name} (0x${packetId.toString(16)}) in ${this.state}/${this.incomingDirection}: ${message}`);
+    }
   }
 
   private maybeApplyProtocolSideEffects(packet: DripleafPacket) {

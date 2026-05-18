@@ -7,7 +7,7 @@ import type { UUID } from "node:crypto";
 import { Either } from "./utils";
 import type { Codec } from "./Codec";
 
-const IDENTIFIER_PATTERN = /^[0-9a-z._-]+:[0-9a-z._\-\/]+$/;
+const IDENTIFIER_PATTERN = /^([0-9a-z._-]+:)?[0-9a-z._\-\/]+$/;
 
 export class PacketReader {
   offset = 0;
@@ -134,11 +134,18 @@ export class PacketReader {
       hex.slice(20)
     ) as UUID;
   }
-
+  
   readVec3d(): Vec3 {
     const x = this.readDouble();
     const y = this.readDouble();
     const z = this.readDouble();
+    return new Vec3(x, y, z);
+  }
+
+  readVec3f(): Vec3 {
+    const x = this.readFloat();
+    const y = this.readFloat();
+    const z = this.readFloat();
     return new Vec3(x, y, z);
   }
 
@@ -191,6 +198,22 @@ export class PacketReader {
   readNbt(): Omit<NbtTag, "name"> {
     const type = this.readUnsignedByte();
     if (!(type in NbtTagType) || type === NbtTagType.End)
+      throw new Error(`Invalid anonymous NBT root type ${type}`);
+
+    const nbtReader = new NbtReader(this.bytes.subarray(this.offset));
+    const value = nbtReader.readPayload(type as Exclude<NbtTagType, NbtTagType.End>);
+    this.offset += nbtReader.offset;
+    return {
+      type: type as Exclude<NbtTagType, NbtTagType.End>,
+      value,
+    };
+  }
+
+  readOptionalNbt(): Omit<NbtTag, "name"> | null {
+    const type = this.readUnsignedByte();
+    if (type === NbtTagType.End)
+      return null;
+    if (!(type in NbtTagType))
       throw new Error(`Invalid anonymous NBT root type ${type}`);
 
     const nbtReader = new NbtReader(this.bytes.subarray(this.offset));

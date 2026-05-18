@@ -1,22 +1,26 @@
-import { SoundEvent } from '@dripleaf/registry'
-import { Codecs } from '../buffer'
+import type { SoundEventValue } from "@dripleaf/core"
+import { SoundEventRegistry } from "@dripleaf/registry"
+import { type Codec, type PacketReader, type PacketWriter } from "../buffer"
+import type { Holder } from "../buffer"
 
-export type SoundEventValue = {
-	location: SoundEvent
-	fixedRange: number | null
-}
+export type { SoundEventValue }
 
-const directSoundEventCodec = {
-	encode(writer: any, value: SoundEventValue) {
-		Codecs.varIntEnum(SoundEvent).encode(writer, value.location)
-		writer.writePrefixedOptional(value.fixedRange, (range: number) => writer.writeFloat(range))
-	},
-	decode(reader: any): SoundEventValue {
-		return {
-			location: Codecs.varIntEnum(SoundEvent).decode(reader),
-			fixedRange: reader.readPrefixedOptional(() => reader.readFloat()),
-		}
-	},
-}
+const soundEventHolderCodec: Codec<Holder<string, SoundEventValue>> = {
+  encode(writer: PacketWriter, value: Holder<string, SoundEventValue>) {
+    if (value.kind !== "reference")
+      throw new Error("Sound event holder must be a reference in protocol 775");
+    const entry = SoundEventRegistry.get(value.value as any);
+    if (!entry)
+      throw new Error(`Unknown sound event: ${value.value}`);
+    writer.writeVarInt(entry.protocolId + 1);
+  },
+  decode(reader: PacketReader): Holder<string, SoundEventValue> {
+    const idx = reader.readVarInt();
+    const entry = SoundEventRegistry.getByProtocolId(idx - 1);
+    if (!entry)
+      return { kind: "reference", value: `sound_${idx}` } as Holder<string, SoundEventValue>;
+    return { kind: "reference", value: entry.key } as Holder<string, SoundEventValue>;
+  },
+};
 
-export const soundHolderCodec = Codecs.holder(Codecs.varIntEnum(SoundEvent), directSoundEventCodec)
+export const soundHolderCodec = soundEventHolderCodec

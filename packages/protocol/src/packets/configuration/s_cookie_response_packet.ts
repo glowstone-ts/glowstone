@@ -6,12 +6,12 @@ import { DripleafPacket, packetCodec } from '../DripleafPacket';
 export class ServerboundCookieResponsePacket extends DripleafPacket {
 	static readonly codec = packetCodec(ServerboundCookieResponsePacket, {
 		key: Codecs.string(),
-		payload: Codecs.byteArray(),
+		payload: Codecs.prefixedOptional(Codecs.byteArray()),
 	});
 
 	constructor(
 		public key: string,
-		public payload: Uint8Array
+		public payload: Uint8Array | null
 	) {
 		super();
 	}

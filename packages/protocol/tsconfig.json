@@ -25,6 +25,13 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+    "baseUrl": ".",
+    "paths": {
+      "@dripleaf/chat": ["../chat/src/index.ts"],
+      "@dripleaf/inventory": ["../inventory/src/index.ts"],
+      "@dripleaf/nbt": ["../nbt/src/index.ts"],
+      "@dripleaf/registry": ["../registry/src/index.ts"]
+    }
   }
 }

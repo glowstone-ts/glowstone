@@ -1,0 +1,33 @@
+{
+  "name": "@dripleaf/core",
+  "module": "src/index.ts",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./BlockPos": "./src/BlockPos.ts",
+    "./ChunkPos": "./src/ChunkPos.ts",
+    "./GlobalPos": "./src/GlobalPos.ts",
+    "./BlockHitResult": "./src/BlockHitResult.ts",
+    "./GameProfile": "./src/GameProfile.ts",
+    "./KnownPack": "./src/KnownPack.ts",
+    "./PlayerInput": "./src/PlayerInput.ts",
+    "./PositionMoveRotation": "./src/PositionMoveRotation.ts",
+    "./RelativeMovements": "./src/RelativeMovements.ts",
+    "./RespawnData": "./src/RespawnData.ts",
+    "./CommonPlayerSpawnInfo": "./src/CommonPlayerSpawnInfo.ts",
+    "./ParticleOptions": "./src/ParticleOptions.ts",
+    "./TagNetworkPayload": "./src/TagNetworkPayload.ts",
+    "./SoundHolder": "./src/SoundHolder.ts",
+    "./Dialog": "./src/Dialog.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@dripleaf/registry": "workspace:*",
+    "vec3": "^0.2.0"
+  }
+}

@@ -1,8 +1,8 @@
-import type { UnnamedNbtTag } from "@dripleaf/nbt";
 import { ItemStack, ItemStackData, type ItemStack as ItemStackType } from "@dripleaf/inventory";
 import { DebugSubscription, ItemType } from "@dripleaf/registry";
 import { codec, Codecs } from "../buffer";
-import type { Either } from "../buffer";
+import type { Either, PacketReader, PacketWriter } from "../buffer";
+import type { ChatComponent } from "@dripleaf/chat";
 
 export enum ServerLinkType {
 	BugReport = 0,
@@ -18,35 +18,31 @@ export enum ServerLinkType {
 }
 
 export type ServerLink = {
-	label: Either<ServerLinkType, UnnamedNbtTag>;
+	label: Either<ServerLinkType, ChatComponent>;
 	url: string;
 }
 
+import { DataComponentPatchCodec } from "../datatypes/DataComponentPatch"
+
 export const ItemStackCodec = codec<ItemStackType>({
 	encode(writer, value) {
-		if (value.type === "empty") {
+		if (!value || value.type === "empty") {
 			writer.writeVarInt(0)
 			return
 		}
 
 		writer.writeVarInt(value.item.count)
 		Codecs.varIntEnum(ItemType).encode(writer, value.item.kind)
-		writer.writeVarInt(0)
-		writer.writeVarInt(0)
+		DataComponentPatchCodec.encode(writer, value.item.component_patch)
 	},
 	decode(reader) {
 		const count = reader.readVarInt()
 		if (count <= 0) return ItemStack.Empty
 
 		const kind = Codecs.varIntEnum(ItemType).decode(reader)
-		const componentsWithData = reader.readVarInt()
-		const componentsWithoutData = reader.readVarInt()
-		for (let index = 0; index < componentsWithData; index++)
-			throw new Error("Data component decoding not implemented yet")
-		for (let index = 0; index < componentsWithoutData; index++)
-			throw new Error("Data component removal decoding not implemented yet")
+		const patch = DataComponentPatchCodec.decode(reader)
 
-		return ItemStack.Present(new ItemStackData(kind, count))
+		return ItemStack.Present(new ItemStackData(kind, count, patch))
 	},
 });
 
@@ -80,4 +76,21 @@ export enum ClientCommandAction {
 	PerformRespawn = 0,
 	RequestStats = 1,
 	RequestGameruleValues = 2,
+}
+
+export enum GameEvent {
+	InvalidBed = 0,
+	StartRaining = 1,
+	StopRaining = 2,
+	ChangeGameMode = 3,
+	WinGame = 4,
+	DemoteToSpectator = 5,
+	ArrowHitPlayer = 6,
+	RainLevelChange = 7,
+	ThunderLevelChange = 8,
+	PufferfishSting = 9,
+	ElderGuardianMobAppearance = 10,
+	EnableRespawnScreen = 11,
+	LimitedCrafting = 12,
+	WaitForLevelChunks = 13,
 }

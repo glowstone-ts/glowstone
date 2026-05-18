@@ -1,3 +1,3 @@
 import { Codecs } from '../buffer';
 
-export const DisplayedSkinPartsCodec = Codecs.byte;
+export const DisplayedSkinPartsCodec = Codecs.unsignedByte;

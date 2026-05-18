@@ -25,12 +25,16 @@ export enum InteractionHand {
   OffHand = 1,
 }
 
-export type GameProfile = {
-  id: string;
-  name: string;
-  properties: {
-    name: string;
-    value: string;
-    signature?: string | null;
-  }[]; 
+export enum EntityAnchor {
+  Feet = 0,
+  Eyes = 1,
+}
+
+export enum BlockFace {
+  Down = 0,
+  Up = 1,
+  North = 2,
+  South = 3,
+  West = 4,
+  East = 5,
 }

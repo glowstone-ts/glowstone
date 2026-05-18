@@ -1,15 +1,16 @@
 # @dripleaf/chat
 
-To install dependencies:
+Replacement for **prismarine-chat**. Includes `MessageBuilder` for composing chat components.
 
-```bash
-bun install
+```ts
+import { MessageBuilder, serialize } from "@dripleaf/chat"
+
+const msg = new MessageBuilder().text("Hello ").trans("chat.type.hello", ["world"]).build()
 ```
 
-To run:
+TODO structure:
 
-```bash
-bun run src/index.ts
+```ts
+const builder = new MessageBuilder();
+builder.
 ```
-
-This project was created using `bun init` in bun v1.3.12. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

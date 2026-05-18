@@ -8,9 +8,10 @@ export enum ResourcePackAction {
 	Declined = 1,
 	FailedDownload = 2,
 	Accepted = 3,
-	InvalidUrl = 4,
-	FailedReload = 5,
-	Discarded = 6,
+	Downloaded = 4,
+	InvalidUrl = 5,
+	FailedReload = 6,
+	Discarded = 7,
 }
 
 export class ServerboundResourcePackPacket extends DripleafPacket {

@@ -2,10 +2,16 @@
   "name": "@dripleaf/chat",
   "module": "src/index.ts",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@dripleaf/registry": "workspace:*"
   }
 }

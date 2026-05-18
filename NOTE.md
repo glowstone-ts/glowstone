@@ -1,0 +1,10 @@
+# Session notes
+
+- Target: MC 26.1, protocol 775
+- API style: Azalea-inspired plugins, not mineflayer-compat
+- Auth: offline only for now
+- Implementation order: keep-alive → registry sync → world chunk helpers → Client plugins
+- Done (2026-05-15): Phase 0 docs, RegistryManager, world getBiome/parseChunkSections, Client plugins, smoke test
+- Done: codegen cache (`codegen/cache/`), block/recipe/item data embedded in packages (no runtime `generated/`)
+- Done (2026-05-16): typecheck is a CI gate, protocol exports are both namespaced and uniquely flattened, `@dripleaf/chunk` owns chunk primitives, and `azalea/` is a local ignored reference checkout.
+- Done (2026-05-16): chunk storage uses collision-safe keys, chunks carry dimension bounds and heightmaps, world exposes height/search/cache APIs, and world plugin lifecycle events invalidate cached block states.
