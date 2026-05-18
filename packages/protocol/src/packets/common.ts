@@ -77,3 +77,20 @@ export enum ClientCommandAction {
 	RequestStats = 1,
 	RequestGameruleValues = 2,
 }
+
+export enum GameEvent {
+	InvalidBed = 0,
+	StartRaining = 1,
+	StopRaining = 2,
+	ChangeGameMode = 3,
+	WinGame = 4,
+	DemoteToSpectator = 5,
+	ArrowHitPlayer = 6,
+	RainLevelChange = 7,
+	ThunderLevelChange = 8,
+	PufferfishSting = 9,
+	ElderGuardianMobAppearance = 10,
+	EnableRespawnScreen = 11,
+	LimitedCrafting = 12,
+	WaitForLevelChunks = 13,
+}
